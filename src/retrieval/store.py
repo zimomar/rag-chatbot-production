@@ -110,8 +110,7 @@ class VectorStore:
 
         # Récupère ou crée la collection
         self._collection = self._client.get_or_create_collection(
-            name=self.collection_name,
-            metadata={"hnsw:space": "l2"},  # Distance L2 (euclidienne)
+            name=self.collection_name
         )
 
         logger.info(
