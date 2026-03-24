@@ -1,0 +1,9 @@
+# Hetzner Cloud API Token (à générer dans la console Hetzner)
+hcloud_token = "votre_token_api_ici"
+
+# Votre clé SSH publique (ex: contenu de ~/.ssh/id_rsa.pub)
+public_key = "ssh-rsa AAAAB3Nza... user@machine"
+
+# Liste des IPs autorisées à se connecter en SSH
+# Fortement recommandé : mettre votre IP publique uniquement (ex: ["1.2.3.4/32"])
+ssh_allowed_ips = ["0.0.0.0/0", "::/0"]

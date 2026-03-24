@@ -1,0 +1,127 @@
+# =============================================================================
+# RAG Local - Docker Compose
+# =============================================================================
+# 3 services: app (API + UI), chromadb, ollama
+# Optimisé pour VPS Hetzner CX42 (8 vCPU, 16 Go RAM)
+
+services:
+  # ---------------------------------------------------------------------------
+  # Application (FastAPI + Streamlit)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-app
+    ports:
+      - "8000:8000"  # FastAPI
+      - "8501:8501"  # Streamlit
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+      - ./src:/app/src:ro  # Mount source for development (read-only)
+    depends_on:
+      chromadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    networks:
+      - rag-network
+    restart: unless-stopped
+    # Resource limits for 16 Go RAM VPS
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # ChromaDB - Vector Store
+  # ---------------------------------------------------------------------------
+  chromadb:
+    image: chromadb/chroma:0.5.23
+    container_name: rag-chromadb
+    ports:
+      - "8001:8000"  # Exposé sur 8001 pour éviter conflit avec l'API
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - rag-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # Ollama - LLM Local
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      # Optimisations mémoire pour VPS 16 Go
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - rag-network
+    restart: unless-stopped
+    # Ollama + Mistral 7B Q4 utilise ~6-8 Go RAM
+    deploy:
+      resources:
+        limits:
+          memory: 10G
+        reservations:
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  chroma_data:
+    name: rag-chroma-data
+  ollama_data:
+    name: rag-ollama-data
