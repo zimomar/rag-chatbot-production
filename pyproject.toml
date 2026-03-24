@@ -20,7 +20,7 @@ dependencies = [
     "langgraph>=0.2.0",
     "langchain-text-splitters>=0.3.0",
     # Vector Store
-    "chromadb>=0.5.0",
+    "chromadb>=0.5.23",
     # Document Processing
     "pymupdf>=1.24.0",
     "markdown>=3.6",
