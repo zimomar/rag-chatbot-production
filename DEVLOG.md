@@ -193,6 +193,26 @@ rag-local/
 
 ---
 
+## 2026-03-24 - Implémentation Finale de l'API et de l'UI
+
+### Ce qui a été fait
+
+- **API FastAPI** : Création de `src/api/main.py`. Implémentation des endpoints `/upload`, `/query`, `/health`, et `/documents`. Intégration complète avec l'agent LangGraph.
+- **UI Streamlit** : Création de `src/ui/app.py`. Interface moderne avec gestion du chat, upload de documents avec spinner, et visualisation interactive des sources/citations.
+- **Correction Déploiement** : Identification de la cause racine des erreurs `ModuleNotFoundError` et `File not found` (dossiers sources vides).
+
+### Décisions prises
+
+1. **Architecture Client-Serveur** : Séparation stricte entre l'UI et l'API via Docker pour une meilleure scalabilité et robustesse.
+2. **Visualisation des Sources** : Ajout de barres de progression de pertinence dans l'UI pour une transparence totale sur la réponse du RAG.
+
+### Prochaines étapes
+
+- [ ] **Validation de Production** : Vérifier le bon fonctionnement sur le VPS Hetzner.
+- [ ] **Optimisation Inference** : Surveiller les temps de réponse Ollama sur CPU.
+
+---
+
 ## Template pour prochaines entrées
 
 ```markdown
