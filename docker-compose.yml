@@ -70,10 +70,10 @@ services:
   # ChromaDB - Vector Store
   # ---------------------------------------------------------------------------
   chromadb:
-    image: chromadb/chroma:0.5.23
+    image: chromadb/chroma:0.5.20
     container_name: rag-chromadb
     ports:
-      - "8001:8000"  # Exposé sur 8001 pour éviter conflit avec l'API
+      - "8001:8000"
     environment:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma
@@ -109,6 +109,7 @@ services:
       # Optimisations mémoire pour VPS 16 Go
       - OLLAMA_NUM_PARALLEL=2
       - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_KEEP_ALIVE=-1 # Ne jamais décharger les modèles de la RAM
     volumes:
       - ollama_data:/root/.ollama
     networks:

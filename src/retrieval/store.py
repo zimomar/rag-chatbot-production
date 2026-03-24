@@ -101,10 +101,12 @@ class VectorStore:
         self.host = host or settings.chroma_host
         self.port = port or settings.chroma_port
 
-        # Connexion au serveur ChromaDB
+        # Connexion au serveur ChromaDB (Forçage tenant/database pour stabilité 0.5.x)
         self._client = chromadb.HttpClient(
             host=self.host,
             port=self.port,
+            tenant="default_tenant",
+            database="default_database",
             settings=ChromaSettings(anonymized_telemetry=False),
         )
 
