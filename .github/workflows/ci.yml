@@ -1,0 +1,66 @@
+name: CI - Local RAG Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-test:
+    name: Code Quality & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check src tests
+
+      - name: Type check with mypy
+        run: mypy src
+
+      - name: Run unit tests with pytest
+        run: pytest tests/
+
+  docker-check:
+    name: Docker Build & Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy .env
+        run: cp .env.example .env
+
+      - name: Build Docker images
+        run: docker compose build
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for services healthcheck
+        run: |
+          # On attend max 2 minutes que tout soit Healthy
+          for i in {1..24}; do
+            STATUS=$(docker compose ps --format json | jq -r '.[].Health')
+            echo "Current health status: $STATUS"
+            if [[ ! "$STATUS" == *"unhealthy"* ]] && [[ ! "$STATUS" == *"starting"* ]]; then
+              echo "All services are HEALTHY!"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Timeout: Some services failed to become healthy."
+          docker compose ps
+          docker compose logs
+          exit 1
