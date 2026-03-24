@@ -177,6 +177,22 @@ rag-local/
 
 ---
 
+## 2026-03-24 - CI/CD et Correctif Final Docker
+
+### Ce qui a été fait
+
+- **Fix ChromaDB Healthcheck** : Passage à un test basé sur Python (`socket`) pour une compatibilité totale avec les images minimales.
+- **Pipeline CI (GitHub Actions)** : Création de `.github/workflows/ci.yml`.
+    - Linting (ruff) et Type Checking (mypy).
+    - Tests unitaires (pytest).
+    - **Docker Integration Test** : Build complet et vérification automatique du statut "Healthy" de tous les services (Chroma, Ollama, App).
+
+### Décisions prises
+
+1. **CI proactive** : Désormais, tout changement du `docker-compose.yml` sera testé automatiquement dans l'environnement GitHub Actions avant d'être déployé.
+
+---
+
 ## Template pour prochaines entrées
 
 ```markdown
