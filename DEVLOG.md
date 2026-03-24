@@ -165,6 +165,18 @@ rag-local/
 
 ---
 
+## 2026-03-24 - Fix Healthchecks Docker
+
+### Ce qui a été fait
+
+- **Robustesse Docker** : Remplacement des healthchecks basés sur `curl` par des commandes natives (`ollama list`) ou des tests socket (`/dev/tcp`). Les images officielles Ollama et ChromaDB ne contiennent pas `curl`, ce qui marquait les containers comme "unhealthy" à tort.
+
+### Problèmes rencontrés
+
+- **Ollama Unhealthy** : Le container refusait de démarrer les dépendances car `curl` était absent de l'image. Corrigé en utilisant `ollama list`.
+
+---
+
 ## Template pour prochaines entrées
 
 ```markdown
