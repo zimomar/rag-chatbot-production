@@ -2,28 +2,92 @@
 
 Chatbot RAG (Retrieval-Augmented Generation) qui répond aux questions en s'appuyant sur une base documentaire privée. **100% local, zéro données envoyées à l'extérieur, RGPD-compatible.**
 
-## Fonctionnalités
+## Architecture Visuelle
 
-- **Upload de documents** : PDF et Markdown supportés
-- **Indexation automatique** : Chunking intelligent + embeddings locaux
-- **Chat contextuel** : Réponses générées avec citations des sources
-- **Interface utilisateur** : UI Streamlit simple et efficace
-- **API REST** : Endpoints FastAPI pour intégration
+```mermaid
+graph TD
+    subgraph "Infrastructure (Hetzner CX42 / VPS)"
+        U[Utilisateur] -->|"Query/Upload"| UI[Streamlit UI :8501]
+        U -->|"API REST"| API[FastAPI :8000]
+        
+        subgraph "Agent Orchestrator (LangGraph)"
+            API --> AG[RAG Agent]
+            UI --> AG
+            AG -->|"1. Retrieve"| VS
+            AG -->|"2. Generate"| LLM
+            AG -->|"3. Cite"| AG
+        end
+        
+        subgraph "Services Locaux"
+            VS[(ChromaDB :8000)]
+            
+            subgraph "Ollama Engine :11434"
+                LLM[Mistral 7B Q4]
+                EMB[nomic-embed-text]
+            end
+        end
+        
+        AG -.->|"Embeddings"| EMB
+    end
+    
+    style LLM fill:#f96,stroke:#333,stroke-width:2px
+    style VS fill:#bbf,stroke:#333,stroke-width:2px
+    style AG fill:#dfd,stroke:#333,stroke-width:2px
+```
 
 ## Stack Technique
 
 | Composant | Technologie |
 |-----------|-------------|
-| Orchestration Agent | LangGraph |
-| Vector Store | ChromaDB |
+| Orchestration Agent | LangGraph (State Graph) |
+| Vector Store | ChromaDB (HNSW L2 Space) |
 | LLM Local | Ollama + Mistral 7B (Q4_K_M) |
-| Embeddings | nomic-embed-text |
+| Embeddings | nomic-embed-text (768 dims) |
 | API | FastAPI |
 | UI | Streamlit |
-| Conteneurisation | Docker Compose |
+| Infrastructure | Terraform (Hetzner CX42) |
+
+## Déploiement Cloud (Hetzner)
+
+### Phase 1 : Infrastructure (Terraform)
+
+1. **Préparer les accès** : 
+   - Récupérez votre API Token Hetzner Cloud.
+   - Générez une clé SSH (`ssh-keygen -t ed25519`).
+2. **Configurer Terraform** :
+   ```bash
+   cd terraform/hcloud
+   cp terraform.tfvars.example terraform.tfvars
+   # Éditer terraform.tfvars avec votre token et votre clé publique
+   ```
+3. **Déployer le VPS** :
+   ```bash
+   terraform init
+   terraform apply
+   ```
+   *Terraform va créer l'instance CX42, le Firewall strict et installer Docker via Cloud-Init.*
+
+### Phase 2 : Application (Docker)
+
+1. **Se connecter au serveur** :
+   ```bash
+   ssh root@<IP_SERVEUR>
+   ```
+2. **Cloner et lancer** :
+   ```bash
+   git clone https://github.com/zimomar/rag-chatbot-production.git /app/repo
+   cd /app/repo
+   cp .env.example .env
+   docker compose up -d
+   ```
+3. **Préparer les modèles (Ollama)** :
+   ```bash
+   docker exec -it rag-ollama ollama pull mistral:7b-instruct-v0.3-q4_K_M
+   docker exec -it rag-ollama ollama pull nomic-embed-text
+   ```
 
 ## Prérequis
-
+... (rest of the file)
 - Docker & Docker Compose v2+
 - 16 Go RAM minimum (Mistral 7B Q4 utilise ~6-8 Go)
 - 20 Go d'espace disque (modèles Ollama)

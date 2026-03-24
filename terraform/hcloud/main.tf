@@ -74,7 +74,7 @@ resource "hcloud_firewall" "rag_firewall" {
 resource "hcloud_server" "rag_server" {
   name         = "rag-chatbot-prod"
   image        = "ubuntu-22.04"
-  server_type  = "cx42"
+  server_type  = "cpx42"
   location     = "nbg1"
   ssh_keys     = [hcloud_ssh_key.default.id]
   firewall_ids = [hcloud_firewall.rag_firewall.id]

@@ -151,6 +151,20 @@ rag-local/
 
 ---
 
+## 2026-03-24 - Correctif Build Docker et Documentation Déploiement
+
+### Ce qui a été fait
+
+- **Fix Dockerfile** : Correction du stage `builder`. Ajout de la copie de `README.md` et du dossier `src/` avant le `pip wheel`. Hatchling (build-backend) échouait car il ne trouvait pas les métadonnées et les sources déclarées dans `pyproject.toml`.
+- **Documentation** : Mise à jour complète du `README.md` avec diagramme d'architecture Mermaid et guide de déploiement IaC pas à pas.
+- **Terraform** : Finalisation du socle Hetzner avec `terraform.tfvars.example` et protection via `.gitignore`.
+
+### Problèmes rencontrés
+
+- **Docker Build Error** : `pip wheel .` échouait avec un code 1. Cause : contexte de build insuffisant dans le multi-stage Dockerfile. Résolu en copiant les fichiers requis par le backend de build.
+
+---
+
 ## Template pour prochaines entrées
 
 ```markdown
