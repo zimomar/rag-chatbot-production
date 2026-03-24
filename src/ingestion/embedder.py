@@ -6,8 +6,8 @@ Ce module fournit une interface pour générer des vecteurs d'embedding
 """
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import httpx
 from tenacity import (
@@ -284,7 +284,7 @@ class Embedder:
                 embedding=embedding,
                 metadata=chunk.metadata,
             )
-            for chunk, embedding in zip(chunks, embeddings)
+            for chunk, embedding in zip(chunks, embeddings, strict=False)
         ]
 
         logger.info(f"Embedding terminé: {len(embedded_chunks)} chunks traités")

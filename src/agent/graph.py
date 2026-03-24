@@ -7,10 +7,10 @@ Recherche (Retrieve) -> Génération (Generate) -> Citations (Cite).
 
 import logging
 from dataclasses import dataclass, field
-from typing import Annotated, Any, Dict, List, TypedDict, Union
+from typing import Any, TypedDict
 
 import httpx
-from langgraph.graph import END, StateGraph, START
+from langgraph.graph import END, START, StateGraph
 
 from src.config import settings
 from src.ingestion.embedder import Embedder
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class Source:
     """Représente une source citée dans la réponse."""
     document: str
-    page: Union[int, None] = None
+    page: int | None = None
     excerpt: str = ""
     relevance_score: float = 0.0
 
@@ -32,7 +32,7 @@ class Source:
 class RAGResponse:
     """Réponse finale de l'agent RAG."""
     answer: str
-    sources: List[Source] = field(default_factory=list)
+    sources: list[Source] = field(default_factory=list)
     confidence: float = 0.0
     query: str = ""
 
@@ -49,9 +49,9 @@ class RAGState(TypedDict):
         confidence: Score de confiance global
     """
     query: str
-    context: List[SearchResult]
+    context: list[SearchResult]
     answer: str
-    sources: List[Source]
+    sources: list[Source]
     confidence: float
 
 
@@ -69,7 +69,7 @@ class RAGAgent:
         self.vector_store = vector_store or VectorStore()
         self.embedder = embedder or Embedder()
         self.base_url = settings.ollama_host.rstrip("/")
-        
+
         # Construction du graphe
         workflow = StateGraph(RAGState)
 
@@ -87,13 +87,13 @@ class RAGAgent:
         self.graph = workflow.compile()
         logger.info("Agent RAG initialisé avec LangGraph")
 
-    def retrieve(self, state: RAGState) -> Dict[str, Any]:
+    def retrieve(self, state: RAGState) -> dict[str, Any]:
         """
         Nœud de recherche : récupère les documents pertinents.
         """
         query = state["query"]
         logger.info(f"Recherche de contexte pour: {query}")
-        
+
         try:
             results = self.vector_store.search_by_text(
                 query_text=query,
@@ -105,13 +105,13 @@ class RAGAgent:
             logger.error(f"Erreur lors du retrieval: {e}")
             return {"context": []}
 
-    def generate(self, state: RAGState) -> Dict[str, Any]:
+    def generate(self, state: RAGState) -> dict[str, Any]:
         """
         Nœud de génération : appelle le LLM avec le contexte en format XML compact.
         """
         query = state["query"]
         context = state["context"]
-        
+
         if not context:
             return {
                 "answer": "Désolé, je n'ai pas trouvé d'informations dans les documents pour répondre à votre question.",
@@ -151,34 +151,34 @@ class RAGAgent:
                 },
                 timeout=settings.ollama_timeout
             )
-            
+
             if response.status_code != 200:
                 raise Exception(f"Erreur Ollama: {response.status_code}")
-                
+
             result = response.json()
             answer = result.get("response", "")
-            
+
             # Calcul de confiance basique
             avg_relevance = sum(res.relevance for res in context) / len(context)
-            
+
             return {"answer": answer, "confidence": avg_relevance}
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de la génération: {e}")
             return {"answer": "Une erreur technique est survenue lors de la génération.", "confidence": 0.0}
 
-    def cite(self, state: RAGState) -> Dict[str, Any]:
+    def cite(self, state: RAGState) -> dict[str, Any]:
         """
         Nœud de citations : extrait les sources basées sur les IDs XML [i].
         """
         answer = state["answer"]
         context = state["context"]
-        
+
         sources = []
         for i, res in enumerate(context):
             # On cherche maintenant l'ID court [1], [2]...
             source_tag = f"[{i+1}]"
-            
+
             if source_tag in answer or res.relevance > 0.8:
                 sources.append(Source(
                     document=res.source,
@@ -186,7 +186,7 @@ class RAGAgent:
                     excerpt=res.content[:200] + "...",
                     relevance_score=res.relevance
                 ))
-                
+
         return {"sources": sources}
 
     async def answer(self, query: str) -> RAGResponse:
@@ -200,11 +200,11 @@ class RAGAgent:
             "sources": [],
             "confidence": 0.0
         }
-        
+
         # Exécution du graphe (synchrone ici pour simplifier)
         # Note: LangGraph supporte async, mais Ollama sur CPU est le goulot d'étranglement
         final_state = self.graph.invoke(initial_state)
-        
+
         return RAGResponse(
             answer=final_state["answer"],
             sources=final_state["sources"],

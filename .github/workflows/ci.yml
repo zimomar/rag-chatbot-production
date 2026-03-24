@@ -52,11 +52,15 @@ jobs:
         run: |
           # On attend max 2 minutes que tout soit Healthy
           for i in {1..24}; do
-            STATUS=$(docker compose ps --format json | jq -r '.[].Health')
-            echo "Current health status: $STATUS"
-            if [[ ! "$STATUS" == *"unhealthy"* ]] && [[ ! "$STATUS" == *"starting"* ]]; then
-              echo "All services are HEALTHY!"
-              exit 0
+            STATUS=$(docker compose ps --format json)
+            echo "Current status: $STATUS"
+            # Si on ne trouve plus 'starting', c'est que tout est stable (Healthy ou Unhealthy)
+            if [[ ! "$STATUS" == *"starting"* ]]; then
+              # Si on ne trouve aucun 'unhealthy', c'est gagné
+              if [[ ! "$STATUS" == *"unhealthy"* ]]; then
+                echo "All services are HEALTHY!"
+                exit 0
+              fi
             fi
             sleep 5
           done

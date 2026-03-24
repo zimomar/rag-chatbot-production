@@ -5,6 +5,6 @@ Ce module gère l'interface avec ChromaDB pour stocker et rechercher
 des documents par similarité vectorielle.
 """
 
-from src.retrieval.store import VectorStore, SearchResult
+from src.retrieval.store import SearchResult, VectorStore
 
 __all__ = ["VectorStore", "SearchResult"]

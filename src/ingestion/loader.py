@@ -7,7 +7,7 @@ les métadonnées utiles (source, nombre de pages, date).
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
@@ -34,7 +34,7 @@ class Document:
     def __post_init__(self) -> None:
         """Ajoute un timestamp si non présent."""
         if "created_at" not in self.metadata:
-            self.metadata["created_at"] = datetime.now(timezone.utc).isoformat()
+            self.metadata["created_at"] = datetime.now(UTC).isoformat()
 
     @property
     def source(self) -> str:

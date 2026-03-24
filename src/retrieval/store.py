@@ -6,8 +6,9 @@ recherche par similarité, et gestion des collections.
 """
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Sequence
+from typing import Any
 from uuid import uuid4
 
 import chromadb
@@ -196,7 +197,7 @@ class VectorStore:
         """
         sanitized = {}
         for key, value in metadata.items():
-            if isinstance(value, (str, int, float, bool)):
+            if isinstance(value, str | int | float | bool):
                 sanitized[key] = value
             elif value is None:
                 continue

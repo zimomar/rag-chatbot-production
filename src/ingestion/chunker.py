@@ -6,8 +6,8 @@ de taille contrôlée tout en respectant la structure du document.
 """
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
