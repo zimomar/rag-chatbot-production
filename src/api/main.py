@@ -49,6 +49,23 @@ class QueryResponse(BaseModel):
     sources: List[SourceModel]
     confidence: float
 
+@app.on_event("startup")
+async def startup_event():
+    """Vérifie la configuration au démarrage."""
+    logger.info("Vérification de la connexion aux services...")
+    
+    if not embedder.check_connection():
+        logger.error(f"CRITIQUE : Impossible de contacter Ollama sur {settings.ollama_host}")
+    else:
+        if not embedder.check_model_available():
+            logger.warning(
+                f"ATTENTION : Le modèle d'embedding '{settings.ollama_embed_model}' n'est pas installé sur Ollama. "
+                f"Lancez : docker exec -it rag-ollama ollama pull {settings.ollama_embed_model}"
+            )
+
+    if not vector_store.check_connection():
+        logger.error(f"CRITIQUE : Impossible de contacter ChromaDB sur {settings.chroma_url}")
+
 @app.get("/health")
 def health_check():
     """Vérifie la santé de l'API et des services."""
