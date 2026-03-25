@@ -14,6 +14,76 @@ st.set_page_config(
     layout="wide",
 )
 
+# --- Custom CSS for Glassy Modern Look ---
+st.markdown("""
+    <style>
+    /* Global Background */
+    .stApp {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: #f1f5f9;
+    }
+
+    /* Glassmorphism Effect for Sidebar */
+    [data-testid="stSidebar"] {
+        background: rgba(30, 41, 59, 0.7) !important;
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Chat Messages Glassy Style */
+    [data-testid="stChatMessage"] {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    /* User Message distinct style */
+    [data-testid="stChatMessage"][data-testid="user"] {
+        background: rgba(59, 130, 246, 0.1) !important;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    /* Main Container Padding */
+    .main .block-container {
+        padding-top: 2rem;
+        max-width: 900px;
+    }
+
+    /* Buttons Modern Look */
+    .stButton>button {
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background: rgba(59, 130, 246, 0.4);
+        border-color: #60a5fa;
+    }
+
+    /* Expander / Sources Style */
+    .streamlit-expanderHeader {
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-radius: 8px !important;
+    }
+
+    /* Progress bar color */
+    div[data-testid="stProgress"] > div > div > div > div {
+        background-color: #3b82f6;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: #f8fafc !important;
+        font-weight: 700;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Configuration de l'URL API (par défaut via docker ou local)
 API_URL = os.getenv("API_URL", "http://api:8000")
 
@@ -26,51 +96,66 @@ with st.sidebar:
     st.title("🤖 RAG Local")
     st.markdown("---")
     
-    # Upload de documents
+    # Upload de documents avec indexation automatique
     st.subheader("📁 Ingestion")
-    uploaded_file = st.file_uploader(
-        "Uploader un document (PDF, MD)", 
-        type=["pdf", "md", "markdown"]
+    uploaded_files = st.file_uploader(
+        "Glissez vos documents ici (PDF, MD)", 
+        type=["pdf", "md", "markdown"],
+        accept_multiple_files=True
     )
     
-    if uploaded_file is not None:
-        if st.button("Indexer le document", use_container_width=True):
-            with st.spinner("Indexation en cours..."):
-                try:
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
-                    response = httpx.post(f"{API_URL}/upload", files=files, timeout=60)
-                    if response.status_code == 200:
-                        st.success(f"Document indexé : {uploaded_file.name}")
-                        st.rerun()
-                    else:
-                        st.error(f"Erreur d'indexation: {response.text}")
-                except Exception as e:
-                    st.error(f"Impossible de contacter l'API: {e}")
+    # Logique d'indexation automatique
+    if uploaded_files:
+        if "processed_files" not in st.session_state:
+            st.session_state.processed_files = set()
+            
+        for uploaded_file in uploaded_files:
+            # On n'indexe que si le fichier n'a pas encore été traité dans cette session
+            if uploaded_file.name not in st.session_state.processed_files:
+                with st.status(f"Indexation de {uploaded_file.name}...") as status:
+                    try:
+                        files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
+                        response = httpx.post(f"{API_URL}/upload", files=files, timeout=60)
+                        if response.status_code == 200:
+                            st.session_state.processed_files.add(uploaded_file.name)
+                            status.update(label=f"✅ {uploaded_file.name} indexé !", state="complete")
+                        else:
+                            status.update(label=f"❌ Erreur sur {uploaded_file.name}", state="error")
+                            st.error(f"Détail: {response.text}")
+                    except Exception as e:
+                        status.update(label="❌ Erreur de connexion", state="error")
+                        st.error(f"Impossible de contacter l'API: {e}")
+        
+        # Petit bouton pour rafraîchir la liste si besoin (optionnel car st.status aide déjà)
+        if st.button("Actualiser la bibliothèque", use_container_width=True):
+            st.rerun()
 
     st.markdown("---")
     
     # Liste des documents
-    st.subheader("📚 Documents Indexés")
+    st.subheader("📚 Bibliothèque")
     try:
         docs_res = httpx.get(f"{API_URL}/documents")
         if docs_res.status_code == 200:
             indexed_docs = docs_res.json().get("documents", [])
             if not indexed_docs:
-                st.info("Aucun document indexé pour le moment.")
+                st.info("Aucun document indexé.")
             for doc_name in indexed_docs:
-                col1, col2 = st.columns([0.8, 0.2])
-                col1.text(f"📄 {doc_name}")
-                if col2.button("🗑️", key=doc_name):
+                col1, col2 = st.columns([0.85, 0.15])
+                col1.markdown(f"**📄 {doc_name}**")
+                if col2.button("🗑️", key=f"del_{doc_name}"):
                     httpx.delete(f"{API_URL}/documents/{doc_name}")
+                    if doc_name in st.session_state.get("processed_files", set()):
+                        st.session_state.processed_files.remove(doc_name)
                     st.rerun()
         else:
-            st.warning("Erreur lors de la récupération des documents.")
+            st.warning("Erreur API Documents.")
     except Exception:
         st.error("L'API n'est pas accessible.")
 
 # --- Main UI: Chat ---
-st.title("Conversation Documentaire")
-st.caption("Posez des questions à vos documents indexés. Réponses 100% locales.")
+st.title("Conversation")
+st.caption("Intelligence locale basée sur vos documents")
 
 # Historique du chat
 if "messages" not in st.session_state:
