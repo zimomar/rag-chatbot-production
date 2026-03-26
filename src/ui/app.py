@@ -44,17 +44,32 @@ st.markdown("""
         background-color: #f0f7ff !important;
     }
 
-    /* ZONE DE SAISIE (FOOTER) : Forcer le fond blanc */
+    /* ZONE DE SAISIE (FOOTER) : Forcer le fond blanc total */
+    div[data-testid="stBottom"] {
+        background-color: #f8fafc !important;
+    }
+    
+    div[data-testid="stBottom"] > div {
+        background-color: transparent !important;
+    }
+
     [data-testid="stChatInput"] {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
     }
-    
-    /* Le conteneur qui entoure l'input (souvent noir par défaut) */
-    div[data-testid="stBottom"] > div {
-        background: transparent !important;
-        background-color: transparent !important;
+
+    /* Forcer la couleur du texte et du curseur dans le champ */
+    [data-testid="stChatInput"] textarea {
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+    }
+
+    /* Style du bouton d'envoi (flèche) */
+    [data-testid="stChatInput"] button {
+        background-color: #f8fafc !important;
+        color: #3b82f6 !important;
     }
 
     /* FILE UPLOADER : Forcer le style clair */
