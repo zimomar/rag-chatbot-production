@@ -14,72 +14,91 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for Glassy Modern Look ---
+# --- Custom CSS for Modern Light Glassy Look ---
 st.markdown("""
     <style>
-    /* Global Background */
-    .stApp {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        color: #f1f5f9;
+    /* Fond principal total */
+    .stApp, .stAppViewContainer, .stMain, .stAppHeader {
+        background: #f8fafc !important;
+        background-color: #f8fafc !important;
     }
 
-    /* Glassmorphism Effect for Sidebar */
-    [data-testid="stSidebar"] {
-        background: rgba(30, 41, 59, 0.7) !important;
-        backdrop-filter: blur(10px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    /* Sidebar : Forcer le fond clair */
+    [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        border-right: 1px solid #e2e8f0 !important;
     }
 
-    /* Chat Messages Glassy Style */
+    /* Bulles de Chat */
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        margin-bottom: 1rem;
-        padding: 1rem;
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 15px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        color: #1e293b !important;
     }
 
-    /* User Message distinct style */
-    [data-testid="stChatMessage"][data-testid="user"] {
-        background: rgba(59, 130, 246, 0.1) !important;
-        border-color: rgba(59, 130, 246, 0.2);
+    /* Message Utilisateur (teinte bleue très légère) */
+    [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
+        background-color: #f0f7ff !important;
     }
 
-    /* Main Container Padding */
-    .main .block-container {
-        padding-top: 2rem;
-        max-width: 900px;
-    }
-
-    /* Buttons Modern Look */
-    .stButton>button {
-        border-radius: 8px;
-        background: rgba(59, 130, 246, 0.2);
-        color: #60a5fa;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background: rgba(59, 130, 246, 0.4);
-        border-color: #60a5fa;
-    }
-
-    /* Expander / Sources Style */
-    .streamlit-expanderHeader {
-        background: rgba(255, 255, 255, 0.02) !important;
-        border-radius: 8px !important;
-    }
-
-    /* Progress bar color */
-    div[data-testid="stProgress"] > div > div > div > div {
-        background-color: #3b82f6;
+    /* ZONE DE SAISIE (FOOTER) : Forcer le fond blanc */
+    [data-testid="stChatInput"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
     }
     
-    /* Headers */
-    h1, h2, h3 {
-        color: #f8fafc !important;
-        font-weight: 700;
+    /* Le conteneur qui entoure l'input (souvent noir par défaut) */
+    div[data-testid="stBottom"] > div {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* FILE UPLOADER : Forcer le style clair */
+    [data-testid="stFileUploader"] {
+        background-color: #f1f5f9 !important;
+        border: 2px dashed #cbd5e1 !important;
+        border-radius: 10px !important;
+        padding: 10px !important;
+    }
+    [data-testid="stFileUploader"] section {
+        background-color: transparent !important;
+    }
+    /* Ciblage spécifique du bouton "Browse files" */
+    [data-testid="stFileUploader"] button {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    [data-testid="stFileUploader"] button:hover {
+        background-color: #eff6ff !important;
+        border-color: #3b82f6 !important;
+        color: #3b82f6 !important;
+    }
+    [data-testid="stFileUploader"] label {
+        color: #475569 !important;
+    }
+
+    }
+
+    /* Textes et Titres */
+    h1, h2, h3, p, span, label, div {
+        color: #1e293b !important;
+    }
+    
+    h1 {
+        font-weight: 800 !important;
+        background: linear-gradient(90deg, #1e293b, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Cacher les éléments superflus */
+    #MainMenu, footer, header {
+        visibility: hidden;
     }
     </style>
     """, unsafe_allow_html=True)
