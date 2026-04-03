@@ -5,13 +5,13 @@ historique de conversations et analyse d'infrastructure.
 """
 
 import json
+import logging
 import os
 import uuid
 from datetime import datetime
 
-import streamlit as st
 import httpx
-import logging
+import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
@@ -693,7 +693,7 @@ with tab_chat:
             ("🔍", "Recherche précise", "Quelles sont les obligations de conformité décrites dans mes documents ?"),
             ("🏛️", "Réglementation EU", "Quels articles du RGPD s'appliquent au traitement de données de mes clients ?"),
         ]
-        for col, (emoji, title, prompt_text) in zip(cols, suggestions):
+        for col, (emoji, title, prompt_text) in zip(cols, suggestions, strict=False):
             with col:
                 st.markdown(f"""
                 <div class="welcome-card">
@@ -1031,7 +1031,7 @@ with tab_compliance:
                     status.update(label="✅ Rapport généré", state="complete")
 
                     # Build markdown report
-                    report_md = f"# Rapport de Conformité\n\n"
+                    report_md = "# Rapport de Conformité\n\n"
                     report_md += f"*Généré le {result.get('generated_at', 'N/A')[:10]}*\n\n---\n\n"
 
                     for section in result["report"]:

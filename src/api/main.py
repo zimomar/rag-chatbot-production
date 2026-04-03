@@ -4,18 +4,18 @@ API REST pour le chatbot RAG Local.
 
 import json
 import logging
-from typing import List, Optional
+from datetime import UTC
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.agent.graph import RAGAgent, RAGResponse, Source
+from src.agent.graph import RAGAgent, RAGResponse
 from src.config import settings
-from src.ingestion.loader import DocumentLoader
 from src.ingestion.chunker import Chunker
 from src.ingestion.embedder import Embedder
+from src.ingestion.loader import DocumentLoader
 from src.retrieval.store import VectorStore
 
 # Configuration du logging
@@ -35,7 +35,7 @@ app = FastAPI(
 class APIKeyMiddleware(BaseHTTPMiddleware):
     """Vérifie la clé API si APP_API_KEY est configurée."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
         if not settings.app_api_key:
             return await call_next(request)
 
@@ -75,13 +75,13 @@ class MessageModel(BaseModel):
 class QueryRequest(BaseModel):
     """Requête de question avec historique optionnel (multi-turn)."""
     question: str
-    history: Optional[List[MessageModel]] = None
+    history: list[MessageModel] | None = None
 
 
 class SourceModel(BaseModel):
     """Modèle de source pour l'API."""
     document: str
-    page: Optional[int]
+    page: int | None
     excerpt: str
     relevance_score: float
 
@@ -89,7 +89,7 @@ class SourceModel(BaseModel):
 class QueryResponse(BaseModel):
     """Réponse de question."""
     answer: str
-    sources: List[SourceModel]
+    sources: list[SourceModel]
     confidence: float
 
 
@@ -98,13 +98,13 @@ class FeedbackRequest(BaseModel):
     question: str
     answer: str
     rating: int  # 1 = positive, 0 = negative
-    comment: Optional[str] = None
+    comment: str | None = None
 
 
 class ComplianceReportRequest(BaseModel):
     """Requête pour un rapport de conformité."""
-    regulations: List[str] = ["NIS2", "DORA", "RGPD", "AI Act"]
-    custom_questions: Optional[List[str]] = None
+    regulations: list[str] = ["NIS2", "DORA", "RGPD", "AI Act"]
+    custom_questions: list[str] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -113,17 +113,17 @@ class ComplianceReportRequest(BaseModel):
 FEEDBACK_FILE = settings.upload_dir.parent / "feedback.json"
 
 
-def _save_feedback(entry: dict) -> None:
+def _save_feedback(entry: dict[str, object]) -> None:
     """Ajoute un feedback au fichier JSON."""
     import json as json_lib
-    from datetime import datetime, timezone
+    from datetime import datetime
     entries = []
     if FEEDBACK_FILE.exists():
         try:
             entries = json_lib.loads(FEEDBACK_FILE.read_text(encoding="utf-8"))
         except Exception:
             entries = []
-    entry["timestamp"] = datetime.now(timezone.utc).isoformat()
+    entry["timestamp"] = datetime.now(UTC).isoformat()
     entries.append(entry)
     FEEDBACK_FILE.write_text(json_lib.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -135,7 +135,7 @@ def _save_feedback(entry: dict) -> None:
 async def startup_event():
     """Vérifie la configuration au démarrage."""
     logger.info("Vérification de la connexion aux services...")
-    
+
     if not embedder.check_connection():
         logger.error(f"CRITIQUE : Impossible de contacter Ollama sur {settings.ollama_host}")
     else:
@@ -174,11 +174,11 @@ async def upload_document(file: UploadFile = File(...)):
         chunks = chunker.split(doc)
         embedded_chunks = embedder.embed_chunks(chunks)
         vector_store.add_documents(embedded_chunks)
-        
+
         return {"status": "success", "chunks": len(chunks), "source": file.filename}
     except Exception as e:
         logger.error(f"Erreur d'indexation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -187,7 +187,7 @@ async def query_agent(request: QueryRequest):
     try:
         history = [{"role": m.role, "content": m.content} for m in request.history] if request.history else None
         response: RAGResponse = await agent.answer(request.question, history=history)
-        
+
         api_sources = [
             SourceModel(
                 document=s.document,
@@ -196,7 +196,7 @@ async def query_agent(request: QueryRequest):
                 relevance_score=s.relevance_score
             ) for s in response.sources
         ]
-        
+
         return QueryResponse(
             answer=response.answer,
             sources=api_sources,
@@ -204,7 +204,7 @@ async def query_agent(request: QueryRequest):
         )
     except Exception as e:
         logger.error(f"Erreur agent: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ async def submit_feedback(request: FeedbackRequest):
         return {"status": "saved"}
     except Exception as e:
         logger.error(f"Erreur feedback: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/feedback")
@@ -318,7 +318,9 @@ async def generate_compliance_report(request: ComplianceReportRequest):
             "answers": answers,
         })
 
-    return {"report": sections, "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+    from datetime import datetime
+
+    return {"report": sections, "generated_at": datetime.now(UTC).isoformat()}
 
 
 # ---------------------------------------------------------------------------
@@ -341,7 +343,7 @@ class InfraAnalysisResponse(BaseModel):
     """Réponse d'analyse d'infrastructure."""
     description: str
     analysis: str
-    sources: List[SourceModel]
+    sources: list[SourceModel]
     confidence: float
 
 
@@ -402,5 +404,5 @@ async def analyze_infrastructure(
         raise
     except Exception as e:
         logger.error(f"Erreur analyse infrastructure: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 

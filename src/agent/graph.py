@@ -40,7 +40,7 @@ class RAGResponse:
 class RAGState(TypedDict, total=False):
     """
     État du graphe LangGraph.
-    
+
     Attributes:
         query: Question de l'utilisateur
         context: Chunks récupérés depuis le vector store

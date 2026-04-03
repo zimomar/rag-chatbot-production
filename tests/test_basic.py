@@ -1,6 +1,7 @@
 """Tests basiques pour valider l'agent."""
-import pytest
+
 from src.agent.graph import RAGAgent
+
 
 def test_agent_init():
     """Vérifie que l'agent s'initialise sans erreur."""
