@@ -2,6 +2,18 @@
 
 Chatbot RAG (Retrieval-Augmented Generation) qui répond aux questions en s'appuyant sur une base documentaire privée. **100% local, zéro données envoyées à l'extérieur, RGPD-compatible.**
 
+## ✨ Fonctionnalités
+
+- 🔒 **Authentification** — Protégez l'accès par mot de passe (UI) et clé API (REST)
+- ⚡ **Streaming temps réel** — Réponses affichées token par token (SSE)
+- 💬 **Conversation multi-turn** — L'assistant se souvient du contexte de la discussion
+- 📄 **Multi-format** — PDF, Markdown, Word (.docx), PowerPoint (.pptx)
+- 🏗️ **Analyse d'infrastructure** — Upload un schéma réseau, l'IA identifie les obligations réglementaires
+- 📋 **Rapport de conformité** — Génération automatique de rapports NIS2, DORA, RGPD, AI Act
+- 👍👎 **Feedback loop** — Notez les réponses pour améliorer le système
+- 🌙 **Mode clair/sombre** — Interface glassmorphique premium
+- 📥 **Export** — Conversations et rapports exportables en Markdown
+
 ## Architecture Visuelle
 
 ```mermaid
@@ -105,7 +117,7 @@ cd rag-local
 
 ```bash
 cp .env.example .env
-# Éditer .env si nécessaire
+# Éditer .env (configurer APP_PASSWORD pour protéger l'accès)
 ```
 
 ### 3. Lancer les services
@@ -135,21 +147,34 @@ docker exec -it rag-ollama ollama pull nomic-embed-text
 ### Via l'interface Streamlit
 
 1. Ouvrir http://localhost:8501
-2. Uploader vos documents PDF/Markdown dans la sidebar
-3. Attendre l'indexation (quelques secondes par document)
-4. Poser vos questions dans le chat
+2. Se connecter avec le mot de passe (si `APP_PASSWORD` configuré)
+3. Uploader vos documents (PDF, MD, DOCX, PPTX) dans la sidebar
+4. Poser vos questions dans le chat — les réponses s'affichent en streaming
+5. Utiliser l'onglet "Rapport de Conformité" pour une analyse automatique
 
 ### Via l'API
 
 ```bash
 # Upload d'un document
 curl -X POST "http://localhost:8000/upload" \
+  -H "X-API-Key: votre_cle" \
   -F "file=@document.pdf"
 
-# Poser une question
+# Poser une question (avec historique multi-turn)
 curl -X POST "http://localhost:8000/query" \
   -H "Content-Type: application/json" \
-  -d '{"question": "Quelle est la politique de congés?"}'
+  -H "X-API-Key: votre_cle" \
+  -d '{"question": "Quelle est la politique de congés?", "history": []}'
+
+# Streaming SSE (token par token)
+curl -X POST "http://localhost:8000/query/stream" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Résume le document"}'
+
+# Générer un rapport de conformité
+curl -X POST "http://localhost:8000/compliance-report" \
+  -H "Content-Type: application/json" \
+  -d '{"regulations": ["NIS2", "RGPD"]}'
 
 # Health check
 curl http://localhost:8000/health
@@ -213,13 +238,31 @@ Voir [DEVLOG.md](DEVLOG.md) pour l'historique des développements et les prochai
 | `CHUNK_SIZE` | Taille des chunks | `1000` |
 | `CHUNK_OVERLAP` | Chevauchement chunks | `200` |
 | `RETRIEVAL_TOP_K` | Docs récupérés | `4` |
+| `APP_PASSWORD` | Mot de passe UI Streamlit | _(vide = pas d'auth)_ |
+| `APP_API_KEY` | Clé API pour FastAPI | _(vide = pas d'auth)_ |
+
+## Endpoints API
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/upload` | Upload et indexation de document |
+| `POST` | `/query` | Question RAG (multi-turn) |
+| `POST` | `/query/stream` | Question RAG en streaming SSE |
+| `GET` | `/documents` | Liste des documents indexés |
+| `DELETE` | `/documents/{filename}` | Suppression d'un document |
+| `POST` | `/feedback` | Enregistrer un feedback 👍/👎 |
+| `GET` | `/feedback` | Lister les feedbacks |
+| `POST` | `/compliance-report` | Générer un rapport de conformité |
+| `POST` | `/analyze-infrastructure` | Analyser un schéma d'infrastructure |
 
 ## Limites Connues
 
 - **Pas de GPU** : Inference CPU uniquement (plus lent mais fonctionne)
 - **Mistral 7B** : Modèle capable mais pas au niveau GPT-4
-- **PDF complexes** : Tableaux et images non extraits
+- **PDF scannés** : Pas d'OCR intégré (prévu en V3)
 - **Langues** : Optimisé pour le français et l'anglais
+- **Concurrence** : 1 query à la fois (limitation Ollama CPU)
 
 ## License
 

@@ -142,9 +142,12 @@ class Source:
 - **Responsabilité** : Extraire le texte brut des fichiers
 - **Entrée** : Chemin fichier ou objet uploadé
 - **Sortie** : `Document` avec contenu et métadonnées
-- **Bibliothèques** :
-  - `pymupdf` pour PDF (rapide, bon support Unicode)
-  - `markdown` pour MD (préserve la structure)
+- **Formats supportés** :
+  - PDF : `pymupdf` (rapide, bon support Unicode)
+  - Markdown : `markdown` (préserve la structure)
+  - **DOCX** : `python-docx` (headings → hiérarchie MD, extraction tableaux)
+  - **PPTX** : `python-pptx` (texte par slide avec marqueurs `[Slide N]`)
+  - TXT : Texte brut
 
 #### `chunker.py`
 - **Responsabilité** : Découper en chunks cohérents
@@ -178,9 +181,13 @@ class Source:
 - **Framework** : LangGraph
 - **Nodes** :
   1. `retrieve` : Recherche dans ChromaDB
-  2. `generate` : Appel LLM avec contexte
+  2. `generate` : Appel LLM avec contexte + historique multi-turn
   3. `cite` : Extraction et formatage des citations
 - **Edges** : Séquentiels (retrieve → generate → cite)
+- **Méthodes additionnelles** :
+  - `_build_prompt()` : Construction du prompt avec contexte XML + historique conversationnel
+  - `stream_answer()` : Génération streaming (yield tokens via Ollama `stream: true`)
+  - `describe_image()` : Description d'infrastructure via modèle vision
 
 **Graph LangGraph :**
 
@@ -196,7 +203,7 @@ class Source:
           │
           ▼
     ┌───────────┐
-    │ generate  │  ← Génération LLM
+    │ generate  │  ← Génération LLM (+ historique multi-turn)
     └─────┬─────┘
           │
           ▼
@@ -213,22 +220,31 @@ class Source:
 ### 4. API (`src/api/`)
 
 #### `main.py`
-- **Framework** : FastAPI
+- **Framework** : FastAPI v0.2.0
+- **Middleware** : `APIKeyMiddleware` (authentification optionnelle via `X-API-Key`)
 - **Endpoints** :
-  - `POST /upload` : Upload et indexation de document
-  - `POST /query` : Question RAG
+  - `POST /upload` : Upload et indexation de document (PDF, MD, DOCX, PPTX)
+  - `POST /query` : Question RAG avec historique multi-turn optionnel
+  - `POST /query/stream` : Question RAG en streaming SSE (token par token)
   - `GET /health` : Health check
   - `GET /documents` : Liste des documents indexés
   - `DELETE /documents/{id}` : Suppression d'un document
+  - `POST /feedback` : Enregistrer un feedback 👍/👎
+  - `GET /feedback` : Lister les feedbacks
+  - `POST /compliance-report` : Générer un rapport de conformité multi-réglementation
+  - `POST /analyze-infrastructure` : Analyser un schéma via modèle vision
 
 ### 5. UI (`src/ui/`)
 
 #### `app.py`
 - **Framework** : Streamlit
 - **Composants** :
-  - Sidebar : Upload de fichiers, liste des documents
-  - Main : Interface de chat
-  - État : Session state pour historique conversation
+  - **Login gate** : Page d'authentification (si `APP_PASSWORD` configuré)
+  - **Sidebar** : Upload de fichiers, liste des documents, toggle thème, historique conversations
+  - **Tab Chat** : Interface de chat avec streaming SSE + multi-turn + feedback 👍/👎
+  - **Tab Infrastructure** : Analyse de schémas d'infrastructure
+  - **Tab Conformité** : Génération de rapports de conformité (NIS2, DORA, RGPD, AI Act)
+  - **État** : Session state pour historique conversation et auth
 
 ## Choix Techniques
 
@@ -301,19 +317,26 @@ class Source:
 
 ### Limites Actuelles
 
-1. **Pas de multimodalité** : Images dans PDF non extraites
+1. **Pas d'OCR** : PDF scannés (images) non traités
 2. **Pas de reranking** : Résultats bruts de similarité
-3. **Pas de conversation multi-turn** : Chaque question est indépendante
-4. **Pas de streaming** : Réponse complète uniquement
+3. **Mono-concurrent** : 1 requête LLM à la fois (limitation CPU Ollama)
 
-### Évolutions Futures (V2)
+### Réalisé en V2 ✅
 
-1. **Reranking** : Ajouter un modèle cross-encoder pour rerank
+1. **✅ Streaming SSE** : Réponses token par token
+2. **✅ Multi-turn** : Mémoire conversationnelle (3 derniers échanges)
+3. **✅ Authentification** : Mot de passe UI + clé API
+4. **✅ DOCX/PPTX** : Formats Word et PowerPoint supportés
+5. **✅ Feedback loop** : Boutons 👍/👎 avec stockage
+6. **✅ Rapport de conformité** : Génération automatique multi-réglementation
+
+### Évolutions Futures (V3)
+
+1. **Reranking** : Cross-encoder pour améliorer la pertinence
 2. **Hybrid search** : Combiner BM25 + vector search
-3. **Streaming** : SSE pour réponses progressives
-4. **Multi-turn** : Mémoire de conversation dans l'agent
-5. **OCR** : Tesseract pour PDF scannés
-6. **Metadata filtering** : Filtres par date, type, etc.
+3. **OCR** : Tesseract pour PDF scannés
+4. **Metadata filtering** : Filtres par date, type, etc.
+5. **Multi-tenant** : Espaces documentaires isolés par utilisateur
 
 ## Ressources et Contraintes
 

@@ -1,5 +1,5 @@
 """
-Chargement de documents PDF et Markdown.
+Chargement de documents PDF, Markdown, DOCX et PPTX.
 
 Ce module extrait le texte brut des fichiers uploadés tout en préservant
 les métadonnées utiles (source, nombre de pages, date).
@@ -14,6 +14,8 @@ from typing import BinaryIO
 
 import fitz  # PyMuPDF
 import markdown
+from docx import Document as DocxDocument
+from pptx import Presentation
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ class DocumentLoader:
         >>> print(doc.content[:100])
     """
 
-    SUPPORTED_EXTENSIONS = {".pdf", ".md", ".markdown", ".txt"}
+    SUPPORTED_EXTENSIONS = {".pdf", ".md", ".markdown", ".txt", ".docx", ".pptx"}
 
     def load_file(self, file_path: Path) -> Document:
         """
@@ -146,6 +148,10 @@ class DocumentLoader:
             return self._load_pdf(file_obj, filename)
         elif extension in {".md", ".markdown"}:
             return self._load_markdown(file_obj, filename)
+        elif extension == ".docx":
+            return self._load_docx(file_obj, filename)
+        elif extension == ".pptx":
+            return self._load_pptx(file_obj, filename)
         else:  # .txt
             return self._load_text(file_obj, filename)
 
@@ -266,5 +272,112 @@ class DocumentLoader:
                 "source": filename,
                 "num_pages": 1,
                 "file_type": "text",
+            },
+        )
+
+    def _load_docx(self, file_obj: BinaryIO, filename: str) -> Document:
+        """
+        Extrait le texte d'un fichier Word (.docx).
+
+        Parcourt les paragraphes et tableaux du document.
+
+        Args:
+            file_obj: Objet file-like contenant le DOCX
+            filename: Nom du fichier
+
+        Returns:
+            Document avec le texte extrait
+        """
+        try:
+            content = file_obj.read()
+            docx_doc = DocxDocument(BytesIO(content))
+        except Exception as e:
+            logger.error(f"Erreur lors du parsing DOCX {filename}: {e}")
+            raise ValueError(f"Impossible de parser le DOCX: {e}") from e
+
+        paragraphs = []
+
+        # Extraire les paragraphes
+        for para in docx_doc.paragraphs:
+            text = para.text.strip()
+            if text:
+                # Préserve la hiérarchie des headings
+                if para.style and para.style.name.startswith("Heading"):
+                    level = para.style.name.replace("Heading ", "")
+                    try:
+                        paragraphs.append(f"{'#' * int(level)} {text}")
+                    except ValueError:
+                        paragraphs.append(text)
+                else:
+                    paragraphs.append(text)
+
+        # Extraire le texte des tableaux
+        for table in docx_doc.tables:
+            for row in table.rows:
+                row_text = " | ".join(
+                    cell.text.strip() for cell in row.cells if cell.text.strip()
+                )
+                if row_text:
+                    paragraphs.append(row_text)
+
+        if not paragraphs:
+            raise ValueError(f"Aucun texte trouvé dans {filename}.")
+
+        full_text = "\n\n".join(paragraphs)
+
+        return Document(
+            content=full_text,
+            metadata={
+                "source": filename,
+                "num_pages": 1,
+                "file_type": "docx",
+            },
+        )
+
+    def _load_pptx(self, file_obj: BinaryIO, filename: str) -> Document:
+        """
+        Extrait le texte d'un fichier PowerPoint (.pptx).
+
+        Parcourt toutes les slides et en extrait le texte.
+
+        Args:
+            file_obj: Objet file-like contenant le PPTX
+            filename: Nom du fichier
+
+        Returns:
+            Document avec le texte extrait slide par slide
+        """
+        try:
+            content = file_obj.read()
+            prs = Presentation(BytesIO(content))
+        except Exception as e:
+            logger.error(f"Erreur lors du parsing PPTX {filename}: {e}")
+            raise ValueError(f"Impossible de parser le PPTX: {e}") from e
+
+        slides_text = []
+        num_slides = len(prs.slides)
+
+        for slide_num, slide in enumerate(prs.slides, start=1):
+            texts = []
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        text = paragraph.text.strip()
+                        if text:
+                            texts.append(text)
+            if texts:
+                slides_text.append(f"[Slide {slide_num}]\n" + "\n".join(texts))
+
+        if not slides_text:
+            raise ValueError(f"Aucun texte trouvé dans {filename}.")
+
+        full_text = "\n\n".join(slides_text)
+
+        return Document(
+            content=full_text,
+            metadata={
+                "source": filename,
+                "num_pages": num_slides,
+                "file_type": "pptx",
             },
         )

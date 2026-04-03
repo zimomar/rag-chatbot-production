@@ -38,6 +38,10 @@ class Settings(BaseSettings):
         default="nomic-embed-text",
         description="Modèle pour les embeddings",
     )
+    ollama_vision_model: str = Field(
+        default="llava",
+        description="Modèle vision pour l'analyse d'images (infrastructure)",
+    )
     ollama_timeout: int = Field(
         default=120,
         description="Timeout en secondes pour les requêtes Ollama",
@@ -101,6 +105,18 @@ class Settings(BaseSettings):
         ge=1,
         le=50,
         description="Taille maximale d'un fichier uploadé en Mo",
+    )
+
+    # -------------------------------------------------------------------------
+    # Authentication
+    # -------------------------------------------------------------------------
+    app_password: str = Field(
+        default="",
+        description="Mot de passe pour l'interface Streamlit (vide = pas d'auth)",
+    )
+    app_api_key: str = Field(
+        default="",
+        description="Clé API pour protéger les endpoints FastAPI (vide = pas d'auth)",
     )
 
     # -------------------------------------------------------------------------

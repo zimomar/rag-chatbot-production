@@ -213,6 +213,63 @@ rag-local/
 
 ---
 
+## 2026-04-02 - V2 : 6 Features Majeures
+
+### Ce qui a été fait
+
+- **F1 — Support DOCX/PPTX** : Extension du `DocumentLoader` pour ingérer des fichiers Word et PowerPoint. Les headings Word sont convertis en hiérarchie Markdown, les tableaux sont extraits, et les slides PowerPoint sont parsées avec marqueurs `[Slide N]`. Ajout de `python-docx` et `python-pptx` dans les dépendances.
+
+- **F2 — Authentification** : Double couche d'auth optionnelle :
+  - **UI** : Login gate Streamlit protégé par `APP_PASSWORD` (env var). Page de connexion glassmorphique cohérente avec le design. Si vide, accès libre.
+  - **API** : Middleware FastAPI vérifiant le header `X-API-Key` contre `APP_API_KEY`. Endpoints publics exemptés (`/health`, `/docs`). Si vide, pas d'auth.
+
+- **F3 — Streaming SSE** : Réponses token par token au lieu d'un bloc.
+  - **Agent** : Nouvelle méthode `stream_answer()` qui utilise `httpx.stream()` vers Ollama (`stream: true`). Yield des dicts `{"token": "..."}` puis `{"done": true, "sources": [...]}`.
+  - **API** : Endpoint `POST /query/stream` retournant un `StreamingResponse` SSE.
+  - **UI** : Affichage progressif avec curseur `▌` animé via `st.empty()`.
+
+- **F4 — Conversation Multi-turn** : L'assistant se souvient du contexte conversationnel.
+  - **Agent** : `_build_prompt()` injecte les 3 derniers échanges (tronqués à 300 chars) dans le prompt LLM.
+  - **API** : `QueryRequest` accepte un champ `history: List[MessageModel]` optionnel.
+  - **UI** : L'historique de la conversation active est envoyé à chaque requête.
+
+- **F5 — Feedback 👍/👎** : Boutons de feedback sur chaque réponse assistant.
+  - **API** : Endpoints `POST /feedback` et `GET /feedback`. Stockage JSON simple dans `feedback.json`.
+  - **UI** : Boutons 👍/👎 sous chaque message assistant avec toast de confirmation.
+
+- **F6 — Rapport de Conformité Auto** : Nouvel onglet "📋 Rapport de Conformité".
+  - **API** : Endpoint `POST /compliance-report` avec questions-types par réglementation (NIS2, DORA, RGPD, AI Act). Exécute N requêtes RAG séquentielles et compile les résultats.
+  - **UI** : Sélecteur multi-réglementation, questions custom optionnelles, barre de progression, export Markdown du rapport généré.
+
+### Décisions prises
+
+1. **Streaming via SSE** plutôt que WebSocket : Plus simple, compatible avec tous les proxys, et Streamlit gère bien les requêtes HTTP longues.
+2. **Feedback en JSON** plutôt que SQLite : Pour un projet portfolio, un fichier JSON suffit et évite une dépendance supplémentaire. Facilement portable.
+3. **Auth optionnelle** : Si `APP_PASSWORD` / `APP_API_KEY` sont vides, l'app fonctionne sans auth. Parfait pour le développement local et la démonstration.
+4. **Multi-turn limité à 3 échanges** : Compromis entre contexte conversationnel et économie de tokens sur Mistral 7B (contexte 8K).
+5. **Rapport de conformité séquentiel** : Chaque question est posée une par une au RAG (pas de parallélisme) pour ne pas surcharger Ollama sur CPU.
+
+### Fichiers modifiés
+
+| Fichier | Changement |
+|---------|------------|
+| `pyproject.toml` | +`python-docx`, +`python-pptx` |
+| `src/ingestion/loader.py` | +`_load_docx()`, +`_load_pptx()` |
+| `src/config.py` | +`app_password`, +`app_api_key` |
+| `.env.example` | +section Authentication |
+| `docker-compose.yml` | +`APP_PASSWORD` env dans UI |
+| `src/agent/graph.py` | +`_build_prompt()`, +`stream_answer()`, +`history` dans `RAGState` |
+| `src/api/main.py` | +APIKeyMiddleware, +`/query/stream`, +`/feedback`, +`/compliance-report`, multi-turn |
+| `src/ui/app.py` | +login gate, +streaming, +feedback 👍/👎, +tab conformité |
+
+### Prochaines étapes
+
+- [ ] Tests d'intégration pour les nouveaux endpoints
+- [ ] Reranking cross-encoder (V3)
+- [ ] Hybrid search BM25 + vecteurs (V3)
+
+---
+
 ## Template pour prochaines entrées
 
 ```markdown
