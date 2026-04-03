@@ -453,18 +453,25 @@ def check_auth():
         return True
 
     # Login page
-    st.markdown("""
+    st.markdown(
+        """
     <div class="hero-section">
         <h1>🔒 RAG Local</h1>
         <p class="hero-subtitle">Authentification requise pour accéder à l'application</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         with st.form("login_form"):
-            password = st.text_input("Mot de passe", type="password", placeholder="Entrez le mot de passe")
-            submitted = st.form_submit_button("🔓 Se connecter", use_container_width=True, type="primary")
+            password = st.text_input(
+                "Mot de passe", type="password", placeholder="Entrez le mot de passe"
+            )
+            submitted = st.form_submit_button(
+                "🔓 Se connecter", use_container_width=True, type="primary"
+            )
             if submitted:
                 if password == APP_PASSWORD:
                     st.session_state.authenticated = True
@@ -496,9 +503,7 @@ def init_session_state():
         st.session_state.active_conversation_id = first_id
 
     if "active_conversation_id" not in st.session_state:
-        st.session_state.active_conversation_id = list(
-            st.session_state.conversations.keys()
-        )[0]
+        st.session_state.active_conversation_id = list(st.session_state.conversations.keys())[0]
 
     if "processed_files" not in st.session_state:
         st.session_state.processed_files = set()
@@ -537,9 +542,7 @@ def delete_conversation(conv_id: str):
     if not st.session_state.conversations:
         create_new_conversation()
     elif conv_id == st.session_state.active_conversation_id:
-        st.session_state.active_conversation_id = list(
-            st.session_state.conversations.keys()
-        )[0]
+        st.session_state.active_conversation_id = list(st.session_state.conversations.keys())[0]
 
 
 def export_conversation_md(conv):
@@ -616,9 +619,7 @@ with st.sidebar:
                 with st.status(f"Indexation de {uploaded_file.name}...") as status:
                     try:
                         files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
-                        response = httpx.post(
-                            f"{API_URL}/upload", files=files, timeout=60
-                        )
+                        response = httpx.post(f"{API_URL}/upload", files=files, timeout=60)
                         if response.status_code == 200:
                             st.session_state.processed_files.add(uploaded_file.name)
                             status.update(
@@ -665,7 +666,9 @@ with st.sidebar:
 # =====================================================================
 # MAIN CONTENT AREA — TABS
 # =====================================================================
-tab_chat, tab_infra, tab_compliance = st.tabs(["💬 Conversation", "🏗️ Analyse d'Infrastructure", "📋 Rapport de Conformité"])
+tab_chat, tab_infra, tab_compliance = st.tabs(
+    ["💬 Conversation", "🏗️ Analyse d'Infrastructure", "📋 Rapport de Conformité"]
+)
 
 
 # =====================================================================
@@ -679,29 +682,43 @@ with tab_chat:
 
     # --- Welcome Screen (when no messages) ---
     if not conv["messages"]:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="hero-section">
             <h1>🤖 RAG Local</h1>
             <p class="hero-subtitle">Intelligence locale basée sur vos documents</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         # Suggested prompts
         cols = st.columns(3)
         suggestions = [
             ("📋", "Résumer un document", "Fais un résumé du dernier document indexé"),
-            ("🔍", "Recherche précise", "Quelles sont les obligations de conformité décrites dans mes documents ?"),
-            ("🏛️", "Réglementation EU", "Quels articles du RGPD s'appliquent au traitement de données de mes clients ?"),
+            (
+                "🔍",
+                "Recherche précise",
+                "Quelles sont les obligations de conformité décrites dans mes documents ?",
+            ),
+            (
+                "🏛️",
+                "Réglementation EU",
+                "Quels articles du RGPD s'appliquent au traitement de données de mes clients ?",
+            ),
         ]
         for col, (emoji, title, prompt_text) in zip(cols, suggestions, strict=False):
             with col:
-                st.markdown(f"""
+                st.markdown(
+                    f"""
                 <div class="welcome-card">
                     <div class="emoji">{emoji}</div>
                     <div class="card-title">{title}</div>
                     <div class="card-desc">{prompt_text[:60]}...</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
                 if st.button(title, key=f"sug_{title}", use_container_width=True):
                     conv["messages"].append({"role": "user", "content": prompt_text})
                     conv["title"] = prompt_text[:40]
@@ -728,18 +745,16 @@ with tab_chat:
             if "sources" in message and message["sources"]:
                 with st.expander("📎 Sources consultées"):
                     for src in message["sources"]:
-                        st.markdown(
-                            f"**{src['document']}** (Page {src['page'] or 'N/A'})"
-                        )
+                        st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
                         st.caption(f"_{src['excerpt']}_")
                         score = src["relevance_score"]
                         st.markdown(
-                            f'<span class="confidence-badge">🎯 Pertinence: {int(score*100)}%</span>',
+                            f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
                             unsafe_allow_html=True,
                         )
             if "confidence" in message and message["confidence"] > 0:
                 st.markdown(
-                    f'<span class="confidence-badge">🧠 Confiance: {int(message["confidence"]*100)}%</span>',
+                    f'<span class="confidence-badge">🧠 Confiance: {int(message["confidence"] * 100)}%</span>',
                     unsafe_allow_html=True,
                 )
             # --- Feedback buttons (assistant messages only) ---
@@ -753,7 +768,11 @@ with tab_chat:
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
                             httpx.post(
                                 f"{API_URL}/feedback",
-                                json={"question": user_q, "answer": message["content"][:500], "rating": 1},
+                                json={
+                                    "question": user_q,
+                                    "answer": message["content"][:500],
+                                    "rating": 1,
+                                },
                                 timeout=5,
                             )
                             st.toast("✅ Merci pour votre feedback !", icon="👍")
@@ -765,7 +784,11 @@ with tab_chat:
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
                             httpx.post(
                                 f"{API_URL}/feedback",
-                                json={"question": user_q, "answer": message["content"][:500], "rating": 0},
+                                json={
+                                    "question": user_q,
+                                    "answer": message["content"][:500],
+                                    "rating": 0,
+                                },
                                 timeout=5,
                             )
                             st.toast("📝 Merci, nous allons améliorer nos réponses.", icon="👎")
@@ -823,20 +846,18 @@ with tab_chat:
 
                 if confidence > 0:
                     st.markdown(
-                        f'<span class="confidence-badge">🧠 Confiance: {int(confidence*100)}%</span>',
+                        f'<span class="confidence-badge">🧠 Confiance: {int(confidence * 100)}%</span>',
                         unsafe_allow_html=True,
                     )
 
                 if sources:
                     with st.expander("📎 Sources consultées"):
                         for src in sources:
-                            st.markdown(
-                                f"**{src['document']}** (Page {src['page'] or 'N/A'})"
-                            )
+                            st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
                             st.caption(f"_{src['excerpt']}_")
                             score = src["relevance_score"]
                             st.markdown(
-                                f'<span class="confidence-badge">🎯 Pertinence: {int(score*100)}%</span>',
+                                f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
                                 unsafe_allow_html=True,
                             )
 
@@ -902,7 +923,9 @@ with tab_infra:
                         result = response.json()
                         status.update(label="✅ Analyse terminée", state="complete")
 
-                        with st.expander("📝 Description extraite de l'infrastructure", expanded=False):
+                        with st.expander(
+                            "📝 Description extraite de l'infrastructure", expanded=False
+                        ):
                             st.markdown(result["description"])
 
                         st.markdown("### 📊 Analyse de Conformité")
@@ -910,7 +933,7 @@ with tab_infra:
 
                         if result["confidence"] > 0:
                             st.markdown(
-                                f'<span class="confidence-badge">🧠 Confiance: {int(result["confidence"]*100)}%</span>',
+                                f'<span class="confidence-badge">🧠 Confiance: {int(result["confidence"] * 100)}%</span>',
                                 unsafe_allow_html=True,
                             )
 
@@ -923,7 +946,7 @@ with tab_infra:
                                     st.caption(f"_{src['excerpt']}_")
                                     score = src["relevance_score"]
                                     st.markdown(
-                                        f'<span class="confidence-badge">🎯 Pertinence: {int(score*100)}%</span>',
+                                        f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
                                         unsafe_allow_html=True,
                                     )
 
@@ -960,7 +983,8 @@ with tab_infra:
                     st.error(f"Impossible de contacter l'API: {e}")
                     logger.error(f"Erreur analyse infrastructure: {e}")
     else:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
             <div class="emoji">🏗️</div>
             <div class="card-title">Uploadez votre schéma d'infrastructure</div>
@@ -969,7 +993,9 @@ with tab_infra:
                 L'IA identifiera les composants concernés par les réglementations européennes.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
 
 # =====================================================================
@@ -988,7 +1014,7 @@ with tab_compliance:
         "Réglementations à analyser",
         options=available_regs,
         default=available_regs,
-        help="Sélectionnez les réglementations à inclure dans le rapport"
+        help="Sélectionnez les réglementations à inclure dans le rapport",
     )
 
     # Custom questions
@@ -1009,8 +1035,12 @@ with tab_compliance:
         )
     with col_info:
         if selected_regs:
-            n_questions = len(selected_regs) * 3 + (len(custom_questions) if custom_questions else 0)
-            st.caption(f"⏱️ Environ {n_questions * 5}-{n_questions * 8} secondes ({n_questions} questions)")
+            n_questions = len(selected_regs) * 3 + (
+                len(custom_questions) if custom_questions else 0
+            )
+            st.caption(
+                f"⏱️ Environ {n_questions * 5}-{n_questions * 8} secondes ({n_questions} questions)"
+            )
 
     if generate_report:
         with st.status("Génération du rapport en cours...", expanded=True) as status:
@@ -1044,19 +1074,28 @@ with tab_compliance:
                                 st.markdown(qa["answer"])
                                 if qa["confidence"] > 0:
                                     st.markdown(
-                                        f'<span class="confidence-badge">🧠 Confiance: {int(qa["confidence"]*100)}%</span>',
+                                        f'<span class="confidence-badge">🧠 Confiance: {int(qa["confidence"] * 100)}%</span>',
                                         unsafe_allow_html=True,
                                     )
                                 if qa["sources"]:
-                                    st.caption("Sources: " + ", ".join(
-                                        f"{s['document']} (p.{s.get('page', 'N/A')})" for s in qa["sources"]
-                                    ))
+                                    st.caption(
+                                        "Sources: "
+                                        + ", ".join(
+                                            f"{s['document']} (p.{s.get('page', 'N/A')})"
+                                            for s in qa["sources"]
+                                        )
+                                    )
 
                             report_md += f"### {qa['question']}\n\n{qa['answer']}\n\n"
                             if qa["sources"]:
-                                report_md += "**Sources:** " + ", ".join(
-                                    f"{s['document']} (p.{s.get('page', 'N/A')})" for s in qa["sources"]
-                                ) + "\n\n"
+                                report_md += (
+                                    "**Sources:** "
+                                    + ", ".join(
+                                        f"{s['document']} (p.{s.get('page', 'N/A')})"
+                                        for s in qa["sources"]
+                                    )
+                                    + "\n\n"
+                                )
                             report_md += "---\n\n"
 
                         st.markdown("---")
@@ -1081,7 +1120,8 @@ with tab_compliance:
     elif not selected_regs:
         st.info("Sélectionnez au moins une réglementation pour générer un rapport.")
     else:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
             <div class="emoji">📋</div>
             <div class="card-title">Rapport de Conformité</div>
@@ -1090,4 +1130,6 @@ with tab_compliance:
                 L'IA analysera vos documents et compilera un rapport structuré.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )

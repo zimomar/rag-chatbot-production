@@ -45,8 +45,7 @@ class EmbeddedChunk:
         """Valide la dimension de l'embedding."""
         if len(self.embedding) != EMBEDDING_DIMENSION:
             logger.warning(
-                f"Dimension inattendue: {len(self.embedding)} "
-                f"(attendu: {EMBEDDING_DIMENSION})"
+                f"Dimension inattendue: {len(self.embedding)} (attendu: {EMBEDDING_DIMENSION})"
             )
 
     @property

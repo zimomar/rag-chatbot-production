@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Source:
     """Représente une source citée dans la réponse."""
+
     document: str
     page: int | None = None
     excerpt: str = ""
@@ -31,6 +32,7 @@ class Source:
 @dataclass
 class RAGResponse:
     """Réponse finale de l'agent RAG."""
+
     answer: str
     sources: list[Source] = field(default_factory=list)
     confidence: float = 0.0
@@ -49,6 +51,7 @@ class RAGState(TypedDict, total=False):
         confidence: Score de confiance global
         history: Historique de conversation pour multi-turn
     """
+
     query: str
     context: list[SearchResult]
     answer: str
@@ -98,9 +101,7 @@ class RAGAgent:
 
         try:
             results = self.vector_store.search_by_text(
-                query_text=query,
-                embedder=self.embedder,
-                top_k=settings.retrieval_top_k
+                query_text=query, embedder=self.embedder, top_k=settings.retrieval_top_k
             )
             return {"context": results}
         except Exception as e:
@@ -115,10 +116,12 @@ class RAGAgent:
     ) -> str:
         """Construit le prompt complet pour le LLM."""
         # Optimization: Format XML ultra-compact (économise ~15% de tokens vs string)
-        context_xml = "".join([
-            f"<s i='{i+1}' src='{res.source}' pg='{res.metadata.get('page', 'N/A')}'>{res.content}</s>"
-            for i, res in enumerate(context)
-        ])
+        context_xml = "".join(
+            [
+                f"<s i='{i + 1}' src='{res.source}' pg='{res.metadata.get('page', 'N/A')}'>{res.content}</s>"
+                for i, res in enumerate(context)
+            ]
+        )
 
         # Instruction concise pour favoriser le KV Cache d'Ollama
         system_instruction = (
@@ -158,7 +161,7 @@ class RAGAgent:
         if not context:
             return {
                 "answer": "Désolé, je n'ai pas trouvé d'informations dans les documents pour répondre à votre question.",
-                "confidence": 0.0
+                "confidence": 0.0,
             }
 
         full_prompt = self._build_prompt(query, context, history)
@@ -173,9 +176,9 @@ class RAGAgent:
                     "options": {
                         "temperature": 0.1,
                         "num_predict": 1000,
-                    }
+                    },
                 },
-                timeout=settings.ollama_timeout
+                timeout=settings.ollama_timeout,
             )
 
             if response.status_code != 200:
@@ -191,7 +194,10 @@ class RAGAgent:
 
         except Exception as e:
             logger.error(f"Erreur lors de la génération: {e}")
-            return {"answer": "Une erreur technique est survenue lors de la génération.", "confidence": 0.0}
+            return {
+                "answer": "Une erreur technique est survenue lors de la génération.",
+                "confidence": 0.0,
+            }
 
     def cite(self, state: RAGState) -> dict[str, Any]:
         """
@@ -203,15 +209,17 @@ class RAGAgent:
         sources = []
         for i, res in enumerate(context):
             # On cherche maintenant l'ID court [1], [2]...
-            source_tag = f"[{i+1}]"
+            source_tag = f"[{i + 1}]"
 
             if source_tag in answer or res.relevance > 0.8:
-                sources.append(Source(
-                    document=res.source,
-                    page=res.metadata.get("page"),
-                    excerpt=res.content[:200] + "...",
-                    relevance_score=res.relevance
-                ))
+                sources.append(
+                    Source(
+                        document=res.source,
+                        page=res.metadata.get("page"),
+                        excerpt=res.content[:200] + "...",
+                        relevance_score=res.relevance,
+                    )
+                )
 
         return {"sources": sources}
 
@@ -220,6 +228,7 @@ class RAGAgent:
         Utilise le modèle vision d'Ollama pour décrire une image d'infrastructure.
         """
         import base64
+
         image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
         prompt = (
@@ -276,7 +285,7 @@ class RAGAgent:
             answer=final_state["answer"],
             sources=final_state["sources"],
             confidence=final_state["confidence"],
-            query=query
+            query=query,
         )
 
     async def stream_answer(
@@ -294,9 +303,7 @@ class RAGAgent:
         # 1. Retrieval (synchrone, rapide)
         try:
             context = self.vector_store.search_by_text(
-                query_text=query,
-                embedder=self.embedder,
-                top_k=settings.retrieval_top_k
+                query_text=query, embedder=self.embedder, top_k=settings.retrieval_top_k
             )
         except Exception as e:
             logger.error(f"Erreur de retrieval streaming: {e}")
@@ -324,7 +331,7 @@ class RAGAgent:
                     "options": {
                         "temperature": 0.1,
                         "num_predict": 1000,
-                    }
+                    },
                 },
                 timeout=settings.ollama_timeout,
             ) as response:
@@ -334,6 +341,7 @@ class RAGAgent:
                     return
 
                 import json as json_lib
+
                 for line in response.iter_lines():
                     if line:
                         try:
@@ -357,14 +365,16 @@ class RAGAgent:
         avg_relevance = sum(res.relevance for res in context) / len(context)
         sources = []
         for i, res in enumerate(context):
-            source_tag = f"[{i+1}]"
+            source_tag = f"[{i + 1}]"
             if source_tag in full_answer or res.relevance > 0.8:
-                sources.append(Source(
-                    document=res.source,
-                    page=res.metadata.get("page"),
-                    excerpt=res.content[:200] + "...",
-                    relevance_score=res.relevance
-                ))
+                sources.append(
+                    Source(
+                        document=res.source,
+                        page=res.metadata.get("page"),
+                        excerpt=res.content[:200] + "...",
+                        relevance_score=res.relevance,
+                    )
+                )
 
         yield {
             "done": True,
@@ -387,4 +397,3 @@ class RAGAgent:
         """
         enriched_query = f"{extra_context}\n\nQuestion: {query}" if extra_context else query
         return await self.answer(enriched_query)
-

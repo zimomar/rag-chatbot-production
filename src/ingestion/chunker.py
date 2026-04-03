@@ -112,9 +112,7 @@ class Chunker:
             is_separator_regex=False,
         )
 
-        logger.info(
-            f"Chunker initialisé: size={self.chunk_size}, overlap={self.chunk_overlap}"
-        )
+        logger.info(f"Chunker initialisé: size={self.chunk_size}, overlap={self.chunk_overlap}")
 
     def split(self, document: Document) -> list[Chunk]:
         """
@@ -188,9 +186,7 @@ class Chunker:
                 logger.warning(f"Impossible de découper {doc.source}: {e}")
                 continue
 
-        logger.info(
-            f"Total: {len(all_chunks)} chunks depuis {len(documents)} documents"
-        )
+        logger.info(f"Total: {len(all_chunks)} chunks depuis {len(documents)} documents")
         return all_chunks
 
     def estimate_chunks(self, content_length: int) -> int:

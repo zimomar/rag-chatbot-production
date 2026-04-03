@@ -141,9 +141,7 @@ class Settings(BaseSettings):
         """Vérifie que l'overlap est inférieur à la taille du chunk."""
         chunk_size = info.data.get("chunk_size", 1000)
         if v >= chunk_size:
-            raise ValueError(
-                f"chunk_overlap ({v}) doit être inférieur à chunk_size ({chunk_size})"
-            )
+            raise ValueError(f"chunk_overlap ({v}) doit être inférieur à chunk_size ({chunk_size})")
         return v
 
     @field_validator("upload_dir")

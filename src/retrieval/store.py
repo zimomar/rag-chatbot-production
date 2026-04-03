@@ -111,13 +111,10 @@ class VectorStore:
         )
 
         # Récupère ou crée la collection
-        self._collection = self._client.get_or_create_collection(
-            name=self.collection_name
-        )
+        self._collection = self._client.get_or_create_collection(name=self.collection_name)
 
         logger.info(
-            f"VectorStore connecté: {self.host}:{self.port}, "
-            f"collection={self.collection_name}"
+            f"VectorStore connecté: {self.host}:{self.port}, collection={self.collection_name}"
         )
 
     def check_connection(self) -> bool:

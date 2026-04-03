@@ -228,9 +228,7 @@ class DocumentLoader:
 
         # Convertit MD en HTML puis extrait le texte
         # Cela préserve la structure tout en nettoyant le formatage
-        md_converter = markdown.Markdown(
-            extensions=["tables", "fenced_code", "nl2br"]
-        )
+        md_converter = markdown.Markdown(extensions=["tables", "fenced_code", "nl2br"])
         html = md_converter.convert(content)
 
         # Nettoyage basique du HTML pour obtenir du texte brut
@@ -314,9 +312,7 @@ class DocumentLoader:
         # Extraire le texte des tableaux
         for table in docx_doc.tables:
             for row in table.rows:
-                row_text = " | ".join(
-                    cell.text.strip() for cell in row.cells if cell.text.strip()
-                )
+                row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
                 if row_text:
                     paragraphs.append(row_text)
 

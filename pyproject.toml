@@ -88,5 +88,12 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 plugins = ["pydantic.mypy"]
 
+[tool.bandit]
+skips = [
+    "B104",   # hardcoded_bind_all_interfaces — intentional for Docker (0.0.0.0)
+    "B105",   # hardcoded_password_string — false positives on error message dicts
+    "B110",   # try_except_pass — intentional for non-critical UI feedback
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

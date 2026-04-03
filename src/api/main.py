@@ -47,6 +47,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         api_key = request.headers.get("X-API-Key", "")
         if api_key != settings.app_api_key:
             from fastapi.responses import JSONResponse
+
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Clé API invalide ou manquante. Ajoutez le header X-API-Key."},
@@ -63,23 +64,27 @@ embedder = Embedder()
 vector_store = VectorStore()
 agent = RAGAgent(vector_store=vector_store, embedder=embedder)
 
+
 # ---------------------------------------------------------------------------
 # Pydantic Models
 # ---------------------------------------------------------------------------
 class MessageModel(BaseModel):
     """Message dans l'historique de conversation."""
+
     role: str
     content: str
 
 
 class QueryRequest(BaseModel):
     """Requête de question avec historique optionnel (multi-turn)."""
+
     question: str
     history: list[MessageModel] | None = None
 
 
 class SourceModel(BaseModel):
     """Modèle de source pour l'API."""
+
     document: str
     page: int | None
     excerpt: str
@@ -88,6 +93,7 @@ class SourceModel(BaseModel):
 
 class QueryResponse(BaseModel):
     """Réponse de question."""
+
     answer: str
     sources: list[SourceModel]
     confidence: float
@@ -95,6 +101,7 @@ class QueryResponse(BaseModel):
 
 class FeedbackRequest(BaseModel):
     """Feedback utilisateur sur une réponse."""
+
     question: str
     answer: str
     rating: int  # 1 = positive, 0 = negative
@@ -103,6 +110,7 @@ class FeedbackRequest(BaseModel):
 
 class ComplianceReportRequest(BaseModel):
     """Requête pour un rapport de conformité."""
+
     regulations: list[str] = ["NIS2", "DORA", "RGPD", "AI Act"]
     custom_questions: list[str] | None = None
 
@@ -117,6 +125,7 @@ def _save_feedback(entry: dict[str, object]) -> None:
     """Ajoute un feedback au fichier JSON."""
     import json as json_lib
     from datetime import datetime
+
     entries = []
     if FEEDBACK_FILE.exists():
         try:
@@ -125,7 +134,9 @@ def _save_feedback(entry: dict[str, object]) -> None:
             entries = []
     entry["timestamp"] = datetime.now(UTC).isoformat()
     entries.append(entry)
-    FEEDBACK_FILE.write_text(json_lib.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
+    FEEDBACK_FILE.write_text(
+        json_lib.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -185,7 +196,11 @@ async def upload_document(file: UploadFile = File(...)):
 async def query_agent(request: QueryRequest):
     """Pose une question au chatbot RAG (avec historique multi-turn optionnel)."""
     try:
-        history = [{"role": m.role, "content": m.content} for m in request.history] if request.history else None
+        history = (
+            [{"role": m.role, "content": m.content} for m in request.history]
+            if request.history
+            else None
+        )
         response: RAGResponse = await agent.answer(request.question, history=history)
 
         api_sources = [
@@ -193,14 +208,13 @@ async def query_agent(request: QueryRequest):
                 document=s.document,
                 page=s.page,
                 excerpt=s.excerpt,
-                relevance_score=s.relevance_score
-            ) for s in response.sources
+                relevance_score=s.relevance_score,
+            )
+            for s in response.sources
         ]
 
         return QueryResponse(
-            answer=response.answer,
-            sources=api_sources,
-            confidence=response.confidence
+            answer=response.answer, sources=api_sources, confidence=response.confidence
         )
     except Exception as e:
         logger.error(f"Erreur agent: {e}")
@@ -215,7 +229,11 @@ async def query_stream(request: QueryRequest):
     """Streaming SSE : retourne la réponse token par token."""
 
     async def event_generator():
-        history = [{"role": m.role, "content": m.content} for m in request.history] if request.history else None
+        history = (
+            [{"role": m.role, "content": m.content} for m in request.history]
+            if request.history
+            else None
+        )
         async for chunk in agent.stream_answer(request.question, history=history):
             yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
 
@@ -229,12 +247,14 @@ async def query_stream(request: QueryRequest):
 async def submit_feedback(request: FeedbackRequest):
     """Enregistre le feedback utilisateur (👍/👎) sur une réponse."""
     try:
-        _save_feedback({
-            "question": request.question,
-            "answer": request.answer[:500],
-            "rating": request.rating,
-            "comment": request.comment,
-        })
+        _save_feedback(
+            {
+                "question": request.question,
+                "answer": request.answer[:500],
+                "rating": request.rating,
+                "comment": request.comment,
+            }
+        )
         return {"status": "saved"}
     except Exception as e:
         logger.error(f"Erreur feedback: {e}")
@@ -245,12 +265,18 @@ async def submit_feedback(request: FeedbackRequest):
 def list_feedback():
     """Liste tous les feedbacks enregistrés."""
     import json as json_lib
+
     if not FEEDBACK_FILE.exists():
         return {"feedback": [], "total": 0}
     try:
         entries = json_lib.loads(FEEDBACK_FILE.read_text(encoding="utf-8"))
         positive = sum(1 for e in entries if e.get("rating") == 1)
-        return {"feedback": entries, "total": len(entries), "positive": positive, "negative": len(entries) - positive}
+        return {
+            "feedback": entries,
+            "total": len(entries),
+            "positive": positive,
+            "negative": len(entries) - positive,
+        }
     except Exception:
         return {"feedback": [], "total": 0}
 
@@ -295,28 +321,34 @@ async def generate_compliance_report(request: ComplianceReportRequest):
         for question in questions:
             try:
                 response: RAGResponse = await agent.answer(question)
-                answers.append({
-                    "question": question,
-                    "answer": response.answer,
-                    "confidence": response.confidence,
-                    "sources": [
-                        {"document": s.document, "page": s.page, "excerpt": s.excerpt[:150]}
-                        for s in response.sources
-                    ],
-                })
+                answers.append(
+                    {
+                        "question": question,
+                        "answer": response.answer,
+                        "confidence": response.confidence,
+                        "sources": [
+                            {"document": s.document, "page": s.page, "excerpt": s.excerpt[:150]}
+                            for s in response.sources
+                        ],
+                    }
+                )
             except Exception as e:
                 logger.error(f"Erreur rapport conformité ({regulation}): {e}")
-                answers.append({
-                    "question": question,
-                    "answer": "Erreur lors de l'analyse.",
-                    "confidence": 0.0,
-                    "sources": [],
-                })
+                answers.append(
+                    {
+                        "question": question,
+                        "answer": "Erreur lors de l'analyse.",
+                        "confidence": 0.0,
+                        "sources": [],
+                    }
+                )
 
-        sections.append({
-            "regulation": regulation,
-            "answers": answers,
-        })
+        sections.append(
+            {
+                "regulation": regulation,
+                "answers": answers,
+            }
+        )
 
     from datetime import datetime
 
@@ -341,6 +373,7 @@ def delete_document(filename: str):
 
 class InfraAnalysisResponse(BaseModel):
     """Réponse d'analyse d'infrastructure."""
+
     description: str
     analysis: str
     sources: list[SourceModel]
@@ -364,7 +397,7 @@ async def analyze_infrastructure(
         if not description:
             raise HTTPException(
                 status_code=422,
-                detail="Impossible de décrire l'image. Vérifiez que le modèle vision est installé."
+                detail="Impossible de décrire l'image. Vérifiez que le modèle vision est installé.",
             )
 
         # 2. Construction de la requête d'analyse
@@ -390,8 +423,9 @@ async def analyze_infrastructure(
                 document=s.document,
                 page=s.page,
                 excerpt=s.excerpt,
-                relevance_score=s.relevance_score
-            ) for s in response.sources
+                relevance_score=s.relevance_score,
+            )
+            for s in response.sources
         ]
 
         return InfraAnalysisResponse(
@@ -405,4 +439,3 @@ async def analyze_infrastructure(
     except Exception as e:
         logger.error(f"Erreur analyse infrastructure: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
-
