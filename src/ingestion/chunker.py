@@ -33,12 +33,12 @@ class Chunk:
     @property
     def source(self) -> str:
         """Document source du chunk."""
-        return self.metadata.get("source", "unknown")
+        return str(self.metadata.get("source", "unknown"))
 
     @property
     def chunk_index(self) -> int:
         """Index du chunk dans le document."""
-        return self.metadata.get("chunk_index", 0)
+        return int(self.metadata.get("chunk_index", 0))
 
     def __len__(self) -> int:
         """Longueur du chunk en caractères."""

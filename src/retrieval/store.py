@@ -40,7 +40,7 @@ class SearchResult:
     @property
     def source(self) -> str:
         """Document source."""
-        return self.metadata.get("source", "unknown")
+        return str(self.metadata.get("source", "unknown"))
 
     @property
     def relevance(self) -> float:
@@ -167,11 +167,11 @@ class VectorStore:
         metadatas = [self._sanitize_metadata(chunk.metadata) for chunk in chunks]
 
         try:
-            self._collection.add(
+            self._collection.add(  # type: ignore[arg-type]
                 ids=list(ids),
                 documents=documents,
-                embeddings=embeddings,
-                metadatas=metadatas,
+                embeddings=embeddings,  # type: ignore[arg-type]
+                metadatas=metadatas,  # type: ignore[arg-type]
             )
 
             logger.info(f"Ajouté {len(chunks)} chunks à la collection")
@@ -228,26 +228,26 @@ class VectorStore:
             return []
 
         try:
-            results = self._collection.query(
-                query_embeddings=[query_embedding],
+            results = self._collection.query(  # type: ignore[call-overload]
+                query_embeddings=[query_embedding],  # type: ignore[arg-type]
                 n_results=min(top_k, self.count),
                 where=where,
-                include=["documents", "metadatas", "distances"],
+                include=["documents", "metadatas", "distances"],  # type: ignore[list-item]
             )
 
             search_results = []
 
             # ChromaDB retourne des listes de listes
-            ids = results.get("ids", [[]])[0]
-            documents = results.get("documents", [[]])[0]
-            metadatas = results.get("metadatas", [[]])[0]
-            distances = results.get("distances", [[]])[0]
+            ids = (results.get("ids") or [[]])[0]  # type: ignore[index]
+            documents = (results.get("documents") or [[]])[0]  # type: ignore[index]
+            metadatas_raw = (results.get("metadatas") or [[]])[0]  # type: ignore[index]
+            distances = (results.get("distances") or [[]])[0]  # type: ignore[index]
 
             for i, doc_id in enumerate(ids):
                 search_results.append(
                     SearchResult(
                         content=documents[i] if documents else "",
-                        metadata=metadatas[i] if metadatas else {},
+                        metadata=dict(metadatas_raw[i]) if metadatas_raw else {},  # type: ignore[index]
                         score=distances[i] if distances else 0.0,
                         id=doc_id,
                     )
@@ -292,13 +292,13 @@ class VectorStore:
 
         try:
             # Récupère toutes les métadonnées
-            results = self._collection.get(include=["metadatas"])
-            metadatas = results.get("metadatas", [])
+            results = self._collection.get(include=["metadatas"])  # type: ignore[list-item]
+            metadatas = results.get("metadatas") or []
 
-            sources = set()
-            for metadata in metadatas:
+            sources: set[str] = set()
+            for metadata in metadatas:  # type: ignore[union-attr]
                 if metadata and "source" in metadata:
-                    sources.add(metadata["source"])
+                    sources.add(str(metadata["source"]))
 
             return sorted(sources)
 

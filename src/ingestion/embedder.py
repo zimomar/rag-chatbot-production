@@ -51,7 +51,7 @@ class EmbeddedChunk:
     @property
     def source(self) -> str:
         """Document source."""
-        return self.metadata.get("source", "unknown")
+        return str(self.metadata.get("source", "unknown"))
 
 
 class OllamaConnectionError(Exception):
@@ -189,7 +189,7 @@ class Embedder:
             if not embedding:
                 raise EmbeddingError("Pas d'embedding dans la réponse")
 
-            return embedding
+            return list(embedding)
 
         except httpx.ConnectError as e:
             logger.error(f"Impossible de se connecter à Ollama: {e}")

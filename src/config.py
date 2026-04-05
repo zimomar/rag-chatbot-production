@@ -7,7 +7,7 @@ avec validation et valeurs par défaut.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -137,7 +137,7 @@ class Settings(BaseSettings):
 
     @field_validator("chunk_overlap")
     @classmethod
-    def validate_chunk_overlap(cls, v: int, info) -> int:
+    def validate_chunk_overlap(cls, v: int, info: Any) -> int:
         """Vérifie que l'overlap est inférieur à la taille du chunk."""
         chunk_size = info.data.get("chunk_size", 1000)
         if v >= chunk_size:

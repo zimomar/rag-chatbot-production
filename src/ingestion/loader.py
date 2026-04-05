@@ -41,12 +41,12 @@ class Document:
     @property
     def source(self) -> str:
         """Nom du fichier source."""
-        return self.metadata.get("source", "unknown")
+        return str(self.metadata.get("source", "unknown"))
 
     @property
     def num_pages(self) -> int:
         """Nombre de pages (pour PDF)."""
-        return self.metadata.get("num_pages", 1)
+        return int(self.metadata.get("num_pages", 1))
 
     def __len__(self) -> int:
         """Longueur du contenu en caractères."""

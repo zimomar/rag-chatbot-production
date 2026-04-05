@@ -4,7 +4,9 @@ API REST pour le chatbot RAG Local.
 
 import json
 import logging
+from collections.abc import AsyncGenerator
 from datetime import UTC
+from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
@@ -35,7 +37,9 @@ app = FastAPI(
 class APIKeyMiddleware(BaseHTTPMiddleware):
     """Vérifie la clé API si APP_API_KEY est configurée."""
 
-    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+    async def dispatch(  # type: ignore[override]
+        self, request: Request, call_next: Any
+    ) -> Any:
         if not settings.app_api_key:
             return await call_next(request)
 
@@ -143,7 +147,7 @@ def _save_feedback(entry: dict[str, object]) -> None:
 # Startup
 # ---------------------------------------------------------------------------
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Vérifie la configuration au démarrage."""
     logger.info("Vérification de la connexion aux services...")
 
@@ -164,7 +168,7 @@ async def startup_event():
 # Core endpoints
 # ---------------------------------------------------------------------------
 @app.get("/health")
-def health_check():
+def health_check() -> dict[str, Any]:
     """Vérifie la santé de l'API et des services."""
     return {
         "status": "healthy",
@@ -174,26 +178,28 @@ def health_check():
 
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...)) -> dict[str, Any]:
     """Upload et indexation d'un document (PDF, MD, DOCX, PPTX)."""
-    if file.size > settings.max_file_size_bytes:
+    file_size = file.size or 0
+    if file_size > settings.max_file_size_bytes:
         raise HTTPException(status_code=413, detail="Fichier trop volumineux")
 
+    filename = file.filename or "upload"
     try:
         content = await file.read()
-        doc = loader.load_uploaded_file(content, file.filename)
+        doc = loader.load_uploaded_file(content, filename)
         chunks = chunker.split(doc)
         embedded_chunks = embedder.embed_chunks(chunks)
         vector_store.add_documents(embedded_chunks)
 
-        return {"status": "success", "chunks": len(chunks), "source": file.filename}
+        return {"status": "success", "chunks": len(chunks), "source": filename}
     except Exception as e:
         logger.error(f"Erreur d'indexation: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/query", response_model=QueryResponse)
-async def query_agent(request: QueryRequest):
+async def query_agent(request: QueryRequest) -> QueryResponse:
     """Pose une question au chatbot RAG (avec historique multi-turn optionnel)."""
     try:
         history = (
@@ -225,10 +231,10 @@ async def query_agent(request: QueryRequest):
 # Streaming endpoint (SSE)
 # ---------------------------------------------------------------------------
 @app.post("/query/stream")
-async def query_stream(request: QueryRequest):
+async def query_stream(request: QueryRequest) -> StreamingResponse:
     """Streaming SSE : retourne la réponse token par token."""
 
-    async def event_generator():
+    async def event_generator() -> AsyncGenerator[str, None]:
         history = (
             [{"role": m.role, "content": m.content} for m in request.history]
             if request.history
@@ -244,7 +250,7 @@ async def query_stream(request: QueryRequest):
 # Feedback endpoint
 # ---------------------------------------------------------------------------
 @app.post("/feedback")
-async def submit_feedback(request: FeedbackRequest):
+async def submit_feedback(request: FeedbackRequest) -> dict[str, Any]:
     """Enregistre le feedback utilisateur (👍/👎) sur une réponse."""
     try:
         _save_feedback(
@@ -262,7 +268,7 @@ async def submit_feedback(request: FeedbackRequest):
 
 
 @app.get("/feedback")
-def list_feedback():
+def list_feedback() -> dict[str, Any]:
     """Liste tous les feedbacks enregistrés."""
     import json as json_lib
 
@@ -285,7 +291,7 @@ def list_feedback():
 # Compliance Report endpoint
 # ---------------------------------------------------------------------------
 @app.post("/compliance-report")
-async def generate_compliance_report(request: ComplianceReportRequest):
+async def generate_compliance_report(request: ComplianceReportRequest) -> dict[str, Any]:
     """Génère un rapport de conformité automatique basé sur les documents indexés."""
     # Questions-types par réglementation
     regulation_questions = {
@@ -359,13 +365,13 @@ async def generate_compliance_report(request: ComplianceReportRequest):
 # Document management
 # ---------------------------------------------------------------------------
 @app.get("/documents")
-def list_documents():
+def list_documents() -> dict[str, Any]:
     """Liste les documents indexés."""
     return {"documents": vector_store.list_sources()}
 
 
 @app.delete("/documents/{filename}")
-def delete_document(filename: str):
+def delete_document(filename: str) -> dict[str, Any]:
     """Supprime un document de la base."""
     count = vector_store.delete_by_source(filename)
     return {"status": "deleted", "chunks": count}
@@ -384,7 +390,7 @@ class InfraAnalysisResponse(BaseModel):
 async def analyze_infrastructure(
     file: UploadFile = File(...),
     question: str = Form(default=""),
-):
+) -> InfraAnalysisResponse:
     """
     Analyse un diagramme d'infrastructure vis-à-vis des réglementations européennes.
     Accepte une image (PNG, JPG, PDF) et une question optionnelle.

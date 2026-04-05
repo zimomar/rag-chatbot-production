@@ -6,6 +6,7 @@ Recherche (Retrieve) -> Génération (Generate) -> Citations (Cite).
 """
 
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any, TypedDict
 
@@ -67,8 +68,8 @@ class RAGAgent:
 
     def __init__(
         self,
-        vector_store: VectorStore = None,
-        embedder: Embedder = None,
+        vector_store: VectorStore | None = None,
+        embedder: Embedder | None = None,
     ) -> None:
         """Initialise l'agent avec ses composants."""
         self.vector_store = vector_store or VectorStore()
@@ -252,7 +253,8 @@ class RAGAgent:
             )
             if response.status_code != 200:
                 raise Exception(f"Erreur Ollama vision: {response.status_code}")
-            return response.json().get("response", "")
+            result: str = response.json().get("response", "")
+            return result
         except Exception as e:
             logger.error(f"Erreur lors de la description d'image: {e}")
             return ""
@@ -292,7 +294,7 @@ class RAGAgent:
         self,
         query: str,
         history: list[dict] | None = None,
-    ):
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Streaming : récupère les documents, puis stream la génération token par token.
 

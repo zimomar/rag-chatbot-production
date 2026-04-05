@@ -46,6 +46,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "ruff>=0.6.0",
     "mypy>=1.11.0",
+    "types-Markdown>=3.6",
     "pre-commit>=3.8.0",
 ]
 test = [
@@ -86,6 +87,7 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+exclude = ["src/ui/app\\.py"]
 plugins = ["pydantic.mypy"]
 
 [tool.bandit]
