@@ -442,7 +442,7 @@ class RAGAgent:
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        
+
         try:
             response = httpx.post(
                 f"{self.base_url}/api/chat",
@@ -461,14 +461,153 @@ class RAGAgent:
             response.raise_for_status()
             result = response.json()
             answer = result.get("message", {}).get("content", "")
-            
+
             eval_count = result.get("eval_count", 0)
             total_duration = result.get("total_duration", 0) / 1e9
             model_name = result.get("model", settings.ollama_model)
             logger.info(f"[LLM Telemetry Direct] Model: {model_name} | Tokens: {eval_count} | Duration: {total_duration:.2f}s")
-            
+
             return RAGResponse(answer=answer, sources=[], confidence=1.0, query=prompt)
         except Exception as e:
             logger.error(f"Erreur lors du generate_direct: {e}")
             raise
+
+    async def analyze_dat_with_rag_extraction(
+        self,
+        full_document: str,
+        system_prompt: str,
+        analysis_prompt: str,
+    ) -> RAGResponse:
+        """
+        Analyse hybride d'un DAT avec extraction RAG intelligente.
+
+        Stratégie :
+        1. Chunke le document complet (évite la troncature brutale)
+        2. Indexe temporairement dans ChromaDB avec une source unique
+        3. Extrait les chunks pertinents pour chaque réglementation via RAG
+        4. Construit un contexte enrichi avec les meilleurs chunks
+        5. Analyse via generate_direct avec contexte optimisé
+        6. Nettoie l'index temporaire
+        7. Calcule une confiance réelle basée sur la pertinence des chunks
+
+        Args:
+            full_document: Contenu complet du DAT (non tronqué)
+            system_prompt: Prompt système pour l'analyse
+            analysis_prompt: Prompt d'analyse (sans le document)
+
+        Returns:
+            RAGResponse avec analyse et confiance calculée
+        """
+        from src.ingestion.chunker import Chunker
+        from src.ingestion.loader import Document
+        import uuid
+
+        temp_source = f"temp_dat_{uuid.uuid4().hex[:8]}"
+
+        try:
+            # 1. Chunking intelligent du document complet
+            logger.info(f"[DAT Analysis] Chunking document ({len(full_document)} chars)")
+            chunker = Chunker(chunk_size=1000, chunk_overlap=200)
+            doc = Document(content=full_document, metadata={"source": temp_source})
+            chunks = chunker.split(doc)
+            logger.info(f"[DAT Analysis] Created {len(chunks)} chunks")
+
+            # 2. Embedding et indexation temporaire
+            logger.info("[DAT Analysis] Embedding chunks")
+            embedded_chunks = self.embedder.embed_chunks(chunks)
+            self.store.add_documents(embedded_chunks)
+            logger.info(f"[DAT Analysis] Indexed {len(embedded_chunks)} chunks with source={temp_source}")
+
+            # 3. Requêtes RAG ciblées pour chaque réglementation
+            queries = {
+                "AI_Act": "intelligence artificielle machine learning ML algorithmes modèles XGBoost Random Forest Vertex AI SageMaker prédictif détection fraude scoring SHAP feature",
+                "DORA": "résilience ICT tiers critiques fournisseurs cloud tests incident notification continuité backup disaster recovery",
+                "RGPD": "données personnelles GDPR RGPD DPO consentement privacy IAM identités Entra Azure AD SSO authentification",
+                "NIS2": "cybersécurité incident sécurité réseau information directive cyber attaque notification 24h",
+                "CRA": "produits numériques mise sur le marché composants logiciels commercialisation",
+            }
+
+            all_relevant_chunks = []
+            relevance_scores = []
+
+            for regulation, query in queries.items():
+                logger.info(f"[DAT Analysis] Searching for {regulation} related content")
+                results = await self.store.search_by_text(
+                    query_text=query,
+                    embedder=self.embedder,
+                    top_k=3,  # Top 3 chunks par réglementation
+                    where={"source": temp_source}  # Filtrer uniquement le DAT temporaire
+                )
+
+                if results:
+                    logger.info(f"[DAT Analysis] {regulation}: found {len(results)} relevant chunks (relevance: {[f'{r.relevance:.2f}' for r in results]})")
+                    all_relevant_chunks.extend(results)
+                    relevance_scores.extend([r.relevance for r in results])
+                else:
+                    logger.warning(f"[DAT Analysis] {regulation}: no relevant chunks found")
+
+            # 4. Déduplication et tri par pertinence
+            seen_ids = set()
+            unique_chunks = []
+            for chunk in sorted(all_relevant_chunks, key=lambda x: x.relevance, reverse=True):
+                if chunk.id not in seen_ids:
+                    seen_ids.add(chunk.id)
+                    unique_chunks.append(chunk)
+
+            logger.info(f"[DAT Analysis] Kept {len(unique_chunks)} unique chunks after deduplication")
+
+            # 5. Construction du contexte enrichi
+            if unique_chunks:
+                enriched_context = "\n\n".join([
+                    f"[Section {i+1} - Pertinence: {chunk.relevance:.0%}]\n{chunk.content}"
+                    for i, chunk in enumerate(unique_chunks[:15])  # Max 15 meilleurs chunks
+                ])
+
+                # Calcul de la confiance moyenne
+                avg_confidence = sum(relevance_scores) / len(relevance_scores) if relevance_scores else 0.0
+                logger.info(f"[DAT Analysis] Average chunk relevance: {avg_confidence:.2%}")
+            else:
+                # Fallback: utiliser le début du document si aucun chunk pertinent
+                logger.warning("[DAT Analysis] No relevant chunks found, using document head")
+                enriched_context = full_document[:20000]
+                avg_confidence = 0.3  # Confiance basse
+
+            # 6. Prompt final avec contexte enrichi
+            final_prompt = (
+                f"Voici les sections pertinentes extraites du DAT :\n\n"
+                f"```text\n{enriched_context}\n```\n\n"
+                f"{analysis_prompt}"
+            )
+
+            # 7. Analyse directe avec contexte optimisé
+            logger.info(f"[DAT Analysis] Calling LLM with enriched context ({len(enriched_context)} chars)")
+            response = await self.generate_direct(
+                prompt=final_prompt,
+                system_prompt=system_prompt
+            )
+
+            # 8. Surcharge de la confiance avec la vraie valeur calculée
+            response.confidence = avg_confidence
+
+            # 9. Ajout des sources
+            response.sources = [
+                Source(
+                    document=temp_source,
+                    excerpt=chunk.content[:200],
+                    relevance_score=chunk.relevance
+                )
+                for chunk in unique_chunks[:5]  # Top 5 sources
+            ]
+
+            logger.info(f"[DAT Analysis] Analysis complete. Confidence: {avg_confidence:.0%}")
+
+            return response
+
+        finally:
+            # 10. Nettoyage de l'index temporaire
+            try:
+                self.store.delete_by_source(temp_source)
+                logger.info(f"[DAT Analysis] Cleaned up temporary index {temp_source}")
+            except Exception as e:
+                logger.error(f"[DAT Analysis] Failed to cleanup temp index: {e}")
 

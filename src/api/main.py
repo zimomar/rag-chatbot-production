@@ -402,11 +402,10 @@ async def analyze_infrastructure(
         filename = (file.filename or "").lower()
 
         if filename.endswith((".docx", ".pdf")):
-            # Extract text automatically
+            # Extract text automatically (NO truncation - will use RAG extraction)
             doc = loader.load_uploaded_file(content, filename)
             description = doc.content
-            if len(description) > 28000:
-                description = description[:28000] + "\n... [Texte tronqué]"
+            logger.info(f"Extracted DAT document: {len(description)} chars")
         else:
             # Vision model fallback for actual images
             description = agent.describe_image(content)
@@ -437,9 +436,8 @@ async def analyze_infrastructure(
             "et la catégorisation stricte des environnements IA (AI Act).\n"
         )
 
+        # Note: Le document sera injecté par analyze_dat_with_rag_extraction
         eu_prompt = (
-            f"Voici la description de l'infrastructure IT extraite du document :\n\n"
-            f"```text\n{description}\n```\n\n"
             f"Génère ton rapport d'audit EN APPLIQUANT EXACTEMENT CE FORMAT DE SORTIE POUR CHAQUE RÉGLEMENTATION (NIS2, DORA, RGPD, AI Act, CRA) :\n"
             f"### [Nom de la Réglementation]\n"
             f"- **Statut d'application et échéance** : [Appliqué depuis X / Non applicable car Y...]\n"
@@ -452,9 +450,11 @@ async def analyze_infrastructure(
         if question:
             eu_prompt += f"\nQuestion spécifique de l'utilisateur : {question}\n"
 
-        # 3. Analyse Directe LLM (Bypass RAG pour éviter les contaminations de contexte)
-        response: RAGResponse = await agent.generate_direct(
-            prompt=eu_prompt, system_prompt=system_context
+        # 3. Analyse Hybride RAG + Direct (extraction intelligente des sections pertinentes)
+        response: RAGResponse = await agent.analyze_dat_with_rag_extraction(
+            full_document=description,
+            system_prompt=system_context,
+            analysis_prompt=eu_prompt,
         )
 
         api_sources = [
