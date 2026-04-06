@@ -265,6 +265,7 @@ class VectorStore:
         query_text: str,
         embedder: Any,  # Évite import circulaire
         top_k: int | None = None,
+        where: dict | None = None,
     ) -> list[SearchResult]:
         """
         Recherche par texte (génère l'embedding automatiquement).
@@ -273,12 +274,13 @@ class VectorStore:
             query_text: Texte de la requête
             embedder: Instance de l'Embedder
             top_k: Nombre de résultats
+            where: Filtre de métadonnées ChromaDB (ex: {"source": "document.pdf"})
 
         Returns:
             Liste de SearchResult
         """
         query_embedding = embedder.embed_text(query_text)
-        return self.search(query_embedding, top_k=top_k)
+        return self.search(query_embedding, top_k=top_k, where=where)
 
     def list_sources(self) -> list[str]:
         """
