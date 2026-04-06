@@ -398,13 +398,23 @@ async def analyze_infrastructure(
     try:
         content = await file.read()
 
-        # 1. Description de l'image via le modèle vision
-        description = agent.describe_image(content)
-        if not description:
-            raise HTTPException(
-                status_code=422,
-                detail="Impossible de décrire l'image. Vérifiez que le modèle vision est installé.",
-            )
+        # 1. Obtenir la description de l'infrastructure
+        filename = (file.filename or "").lower()
+
+        if filename.endswith((".docx", ".pdf")):
+            # Extract text automatically
+            doc = loader.load_uploaded_file(content, filename)
+            description = doc.content
+            if len(description) > 6000:
+                description = description[:6000] + "\n... [Texte tronqué]"
+        else:
+            # Vision model fallback for actual images
+            description = agent.describe_image(content)
+            if not description:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Impossible de décrire l'image. Vérifiez que le modèle vision est installé.",
+                )
 
         # 2. Construction de la requête d'analyse
         eu_prompt = (

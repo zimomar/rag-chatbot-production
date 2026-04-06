@@ -917,8 +917,8 @@ with tab_infra:
 
     with col_upload:
         infra_file = st.file_uploader(
-            "Schéma d'infrastructure (image ou PDF)",
-            type=["png", "jpg", "jpeg", "svg", "pdf"],
+            "Schéma d'infrastructure ou Document d'architecture (Image, PDF, DOCX)",
+            type=["png", "jpg", "jpeg", "svg", "pdf", "docx"],
             key="infra_upload",
         )
 
