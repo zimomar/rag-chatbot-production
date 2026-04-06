@@ -432,3 +432,43 @@ class RAGAgent:
         """
         enriched_query = f"{extra_context}\n\nQuestion: {query}" if extra_context else query
         return await self.answer(enriched_query)
+
+    async def generate_direct(self, prompt: str, system_prompt: str | None = None) -> RAGResponse:
+        """
+        Appel direct au LLM sans recherche RAG, idéal pour analyser un document entier passé en mémoire
+        sans risquer de contaminer le contexte avec des chunks aléatoires d'autres documents.
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        
+        try:
+            response = httpx.post(
+                f"{self.base_url}/api/chat",
+                json={
+                    "model": settings.ollama_model,
+                    "messages": messages,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.1,
+                        "num_predict": 1200,
+                        "num_ctx": 24000,  # Grand contexte pour le texte extrait du DAT complet
+                    },
+                },
+                timeout=settings.ollama_timeout,
+            )
+            response.raise_for_status()
+            result = response.json()
+            answer = result.get("message", {}).get("content", "")
+            
+            eval_count = result.get("eval_count", 0)
+            total_duration = result.get("total_duration", 0) / 1e9
+            model_name = result.get("model", settings.ollama_model)
+            logger.info(f"[LLM Telemetry Direct] Model: {model_name} | Tokens: {eval_count} | Duration: {total_duration:.2f}s")
+            
+            return RAGResponse(answer=answer, sources=[], confidence=1.0, query=prompt)
+        except Exception as e:
+            logger.error(f"Erreur lors du generate_direct: {e}")
+            raise
+

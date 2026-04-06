@@ -405,8 +405,8 @@ async def analyze_infrastructure(
             # Extract text automatically
             doc = loader.load_uploaded_file(content, filename)
             description = doc.content
-            if len(description) > 6000:
-                description = description[:6000] + "\n... [Texte tronqué]"
+            if len(description) > 28000:
+                description = description[:28000] + "\n... [Texte tronqué]"
         else:
             # Vision model fallback for actual images
             description = agent.describe_image(content)
@@ -429,9 +429,9 @@ async def analyze_infrastructure(
             "par rapport aux réglementations en vigueur.\n"
             "3. PERTINENCE DU CRA : Cherche explicitement dans le DAT des indices indiquant que l'entreprise met sur le marché des produits ou composants numériques. Si le DAT ne contient pas d'information explicite sur la mise sur le marché de produits numériques, réponds explicitement que la question de l'application du CRA ne peut pas être tranchée sur la base du document.\n"
             "4. PRÉSOMPTION D'APPLICATION RGPD : Le RGPD s'applique à toute organisation traitant des données de résidents de l'UE sans seuil. Cherche dans le DAT toute mention de données personnelles, composants IAM (Identity Access Management, ex: Entra ID, Azure AD), synchronisation d'identités, authentification SSO ou hébergement de bases de données internes. Considère que le RGPD s'applique obligatoirement dès la présence de ces éléments.\n"
-            "5. PRÉSOMPTION D'APPLICATION AI ACT : L'AI Act s'applique dès l'instant où l'infrastructure conçoit, développe ou héberge des modèles d'IA ou Machine Learning. Cherche activement toute mention de 'SageMaker', 'Machine Learning', 'ML', 'LLM', ou 'IA' dans le DAT. Si ces composants existent, déclare explicitement que l'AI Act EST APPLICABLE. Ne dis jamais 'Non applicable'.\n"
+            "5. PRÉSOMPTION D'APPLICATION AI ACT : L'AI Act s'applique dès l'instant où l'infrastructure conçoit, développe ou exploite des modèles d'IA, des algorithmes ou du Machine Learning. Cherche activement dans le DAT toute mention d'algorithmes (ex: XGBoost, Random Forest), de services cloud ML (ex: Vertex AI, SageMaker), de NLP, d'analyse prédictive, ou de modèles de détection (ex: détection de fraude). Si ces éléments existent, déclare explicitement que l'AI Act EST APPLICABLE obligatoirement. Ne dis jamais 'Non applicable'.\n"
             "6. DÉTECTION DES GAPS PAR L'ABSENCE : Si une exigence réglementaire n'est pas clairement décrite dans le DAT, c'est un GAP (une lacune). Ne dis pas 'Aucun gap', liste ces absences. Cherche spécifiquement : "
-            "le registre des tiers ICT critiques (DORA: pour AWS, GitLab, CrowdStrike), "
+            "le registre des tiers ICT critiques (DORA: vérifier tous les prestataires cloud, SaaS ou de sécurité cités dans le DAT), "
             "le processus formel de notification d'incident sous 24h (NIS2), "
             "le calendrier de tests de résilience ICT (DORA), "
             "et la catégorisation stricte des environnements IA (AI Act).\n"
@@ -452,10 +452,9 @@ async def analyze_infrastructure(
         if question:
             eu_prompt += f"\nQuestion spécifique de l'utilisateur : {question}\n"
 
-        # 3. Analyse RAG
-        search_query = "Réglementations cybersécurité NIS2 DORA AI Act RGPD CRA exigences"
-        response: RAGResponse = await agent.answer(
-            eu_prompt, search_query=search_query, system_prompt=system_context
+        # 3. Analyse Directe LLM (Bypass RAG pour éviter les contaminations de contexte)
+        response: RAGResponse = await agent.generate_direct(
+            prompt=eu_prompt, system_prompt=system_context
         )
 
         api_sources = [
