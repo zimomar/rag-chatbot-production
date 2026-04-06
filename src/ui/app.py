@@ -92,6 +92,20 @@ SHARED_CSS = """
         font-size: 0.85rem;
         font-weight: 500;
     }
+    /* Global Primary Button Color Override */
+    .stButton button[kind="primary"] {
+        background-color: #6366f1 !important;
+        border-color: #6366f1 !important;
+        color: white !important;
+        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        transition: all 0.2s ease;
+    }
+    .stButton button[kind="primary"]:hover {
+        background-color: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
 </style>
 """
 
@@ -1031,6 +1045,7 @@ with tab_infra:
                     file_name=f"rapport_audit_{datetime.now().strftime('%Y%m%d_%H%M')}.md",
                     mime="text/markdown",
                     use_container_width=True,
+                    type="primary"
                 )
 
                 # Insertion des liens officiels dynamiquement
