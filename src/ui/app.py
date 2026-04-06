@@ -984,10 +984,10 @@ with tab_infra:
 
                 # Insertion des liens officiels dynamiquement
                 links = {
-                    "NIS2": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L2555",
-                    "DORA": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2554",
+                    "NIS2": "https://cyber.gouv.fr/la-directive-nis-2",
+                    "DORA": "https://www.eiopa.europa.eu/digital-operational-resilience-act-dora_en#level-1---regulation-and-amending-directive",
                     "AI Act": "https://artificialintelligenceact.eu/fr/",
-                    "RGPD": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32016R0679",
+                    "RGPD": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on",
                     "CRA": "https://digital-strategy.ec.europa.eu/fr/policies/cyber-resilience-act",
                 }
 
