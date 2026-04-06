@@ -44,7 +44,7 @@ SHARED_CSS = """
         30% { opacity: 1; transform: scale(1.1); }
     }
 
-    #MainMenu, footer, header { visibility: hidden; }
+    #MainMenu, footer { visibility: hidden; }
 
     .typing-indicator {
         display: flex; align-items: center; gap: 6px; padding: 0.5rem 1rem;
@@ -177,12 +177,12 @@ DARK_CSS = """
         border-color: rgba(59, 130, 246, 0.4) !important; background: rgba(59, 130, 246, 0.05) !important;
     }
     [data-testid="stFileUploader"] section { background: transparent !important; }
-    [data-testid="stFileUploader"] button {
+    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"] {
         background: rgba(255, 255, 255, 0.08) !important; color: #93c5fd !important;
         border: 1px solid rgba(59, 130, 246, 0.25) !important; border-radius: 8px !important;
         transition: all 0.3s ease !important;
     }
-    [data-testid="stFileUploader"] button:hover {
+    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"]:hover {
         background: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important;
     }
     [data-testid="stFileUploader"] label { color: #94a3b8 !important; }
@@ -331,12 +331,12 @@ LIGHT_CSS = """
         border-color: rgba(59, 130, 246, 0.4) !important; background: rgba(239, 246, 255, 0.5) !important;
     }
     [data-testid="stFileUploader"] section { background: transparent !important; }
-    [data-testid="stFileUploader"] button {
+    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"] {
         background: rgba(255, 255, 255, 0.8) !important; color: #2563eb !important;
         border: 1px solid rgba(59, 130, 246, 0.2) !important; border-radius: 8px !important;
         transition: all 0.3s ease !important;
     }
-    [data-testid="stFileUploader"] button:hover {
+    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"]:hover {
         background: rgba(239, 246, 255, 0.8) !important; border-color: #3b82f6 !important;
     }
     [data-testid="stFileUploader"] label { color: #64748b !important; }
@@ -470,7 +470,7 @@ def check_auth():
                 "Mot de passe", type="password", placeholder="Entrez le mot de passe"
             )
             submitted = st.form_submit_button(
-                "🔓 Se connecter", use_container_width=True, type="primary"
+                ":material/lock_open: Se connecter", use_container_width=True, type="primary"
             )
             if submitted:
                 if password == APP_PASSWORD:
@@ -558,11 +558,11 @@ def export_conversation_md(conv):
 # SIDEBAR
 # =====================================================================
 with st.sidebar:
-    st.markdown("## 🤖 RAG Local")
+    st.markdown("## :material/smart_toy: RAG Local")
     st.caption("Intelligence documentaire locale")
 
     # --- Theme Toggle ---
-    theme_label = "🌙 Mode sombre" if is_dark else "☀️ Mode clair"
+    theme_label = ":material/dark_mode: Mode sombre" if is_dark else ":material/light_mode: Mode clair"
     if st.toggle(theme_label, value=is_dark, key="theme_toggle"):
         if not st.session_state.dark_mode:
             st.session_state.dark_mode = True
@@ -575,8 +575,8 @@ with st.sidebar:
     st.markdown("---")
 
     # --- Chat History ---
-    st.markdown("### 💬 Conversations")
-    if st.button("➕ Nouvelle conversation", use_container_width=True):
+    st.markdown("### :material/forum: Conversations")
+    if st.button(":material/add: Nouvelle conversation", use_container_width=True):
         create_new_conversation()
         st.rerun()
 
@@ -599,7 +599,7 @@ with st.sidebar:
                 switch_conversation(conv["id"])
                 st.rerun()
         with col2:
-            if st.button("🗑️", key=f"del_conv_{conv['id']}"):
+            if st.button(":material/delete:", key=f"del_conv_{conv['id']}"):
                 delete_conversation(conv["id"])
                 st.rerun()
 
@@ -628,12 +628,12 @@ with st.sidebar:
                             )
                         else:
                             status.update(
-                                label=f"❌ Erreur sur {uploaded_file.name}",
+                                label=f":material/error: Erreur sur {uploaded_file.name}",
                                 state="error",
                             )
                             st.error(f"Détail: {response.text}")
                     except Exception as e:
-                        status.update(label="❌ Erreur de connexion", state="error")
+                        status.update(label=":material/error: Erreur de connexion", state="error")
                         st.error(f"Impossible de contacter l'API: {e}")
 
         if st.button("Actualiser la bibliothèque", use_container_width=True):
@@ -642,7 +642,7 @@ with st.sidebar:
     st.markdown("---")
 
     # --- Document Library ---
-    st.markdown("### 📚 Bibliothèque")
+    st.markdown("### :material/library_books: Bibliothèque")
     try:
         docs_res = httpx.get(f"{API_URL}/documents")
         if docs_res.status_code == 200:
@@ -652,7 +652,7 @@ with st.sidebar:
             for doc_name in indexed_docs:
                 col1, col2 = st.columns([0.85, 0.15])
                 col1.markdown(f"📄 **{doc_name}**")
-                if col2.button("🗑️", key=f"del_{doc_name}"):
+                if col2.button(":material/delete:", key=f"del_{doc_name}"):
                     httpx.delete(f"{API_URL}/documents/{doc_name}")
                     if doc_name in st.session_state.processed_files:
                         st.session_state.processed_files.remove(doc_name)
@@ -667,7 +667,7 @@ with st.sidebar:
 # MAIN CONTENT AREA — TABS
 # =====================================================================
 tab_chat, tab_infra, tab_compliance = st.tabs(
-    ["💬 Conversation", "🏗️ Analyse d'Infrastructure", "📋 Rapport de Conformité"]
+    [":material/chat: Conversation", ":material/architecture: Analyse d'Infrastructure", ":material/policy: Rapport de Conformité"]
 )
 
 
@@ -695,14 +695,14 @@ with tab_chat:
         # Suggested prompts
         cols = st.columns(3)
         suggestions = [
-            ("📋", "Résumer un document", "Fais un résumé du dernier document indexé"),
+            (":material/summarize:", "Résumer un document", "Fais un résumé du dernier document indexé"),
             (
-                "🔍",
+                ":material/search:",
                 "Recherche précise",
                 "Quelles sont les obligations de conformité décrites dans mes documents ?",
             ),
             (
-                "🏛️",
+                ":material/gavel:",
                 "Réglementation EU",
                 "Quels articles du RGPD s'appliquent au traitement de données de mes clients ?",
             ),
@@ -731,7 +731,7 @@ with tab_chat:
         with col_export:
             md_export = export_conversation_md(conv)
             st.download_button(
-                "📥",
+                ":material/download:",
                 data=md_export,
                 file_name=f"conversation_{conv['id'][:8]}.md",
                 mime="text/markdown",
@@ -762,7 +762,7 @@ with tab_chat:
                 feedback_key = f"fb_{conv['id']}_{msg_idx}"
                 col_fb1, col_fb2, col_fb_space = st.columns([0.08, 0.08, 0.84])
                 with col_fb1:
-                    if st.button("👍", key=f"{feedback_key}_up", help="Bonne réponse"):
+                    if st.button(":material/thumb_up:", key=f"{feedback_key}_up", help="Bonne réponse"):
                         try:
                             # Find the user question for this answer
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
@@ -775,11 +775,11 @@ with tab_chat:
                                 },
                                 timeout=5,
                             )
-                            st.toast("✅ Merci pour votre feedback !", icon="👍")
+                            st.toast("✅ Merci pour votre feedback !", icon=":material/thumb_up:")
                         except Exception:
                             pass
                 with col_fb2:
-                    if st.button("👎", key=f"{feedback_key}_down", help="Mauvaise réponse"):
+                    if st.button(":material/thumb_down:", key=f"{feedback_key}_down", help="Mauvaise réponse"):
                         try:
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
                             httpx.post(
@@ -791,7 +791,7 @@ with tab_chat:
                                 },
                                 timeout=5,
                             )
-                            st.toast("📝 Merci, nous allons améliorer nos réponses.", icon="👎")
+                            st.toast("📝 Merci, nous allons améliorer nos réponses.", icon=":material/thumb_down:")
                         except Exception:
                             pass
 
@@ -880,7 +880,7 @@ with tab_chat:
 # TAB 2: INFRASTRUCTURE ANALYSIS
 # =====================================================================
 with tab_infra:
-    st.markdown("## 🏗️ Analyse d'Infrastructure")
+    st.markdown("## :material/architecture: Analyse d'Infrastructure")
     st.caption(
         "Uploadez un schéma de votre infrastructure IT et identifiez les composants "
         "concernés par les réglementations européennes (NIS2, DORA, AI Act, RGPD, etc.)"
@@ -906,7 +906,7 @@ with tab_infra:
         if infra_file.type and infra_file.type.startswith("image"):
             st.image(infra_file, caption="Aperçu du schéma", use_container_width=True)
 
-        if st.button("🔍 Analyser l'infrastructure", use_container_width=True, type="primary"):
+        if st.button(":material/search: Analyser l'infrastructure", use_container_width=True, type="primary"):
             with st.status("Analyse en cours...", expanded=True) as status:
                 st.write("📸 Description de l'infrastructure via modèle vision...")
                 try:
@@ -921,7 +921,7 @@ with tab_infra:
 
                     if response.status_code == 200:
                         result = response.json()
-                        status.update(label="✅ Analyse terminée", state="complete")
+                        status.update(label=":material/check_circle: Analyse terminée", state="complete")
 
                         with st.expander(
                             "📝 Description extraite de l'infrastructure", expanded=False
@@ -970,16 +970,16 @@ with tab_infra:
                                 conv["title"] = f"Analyse infra — {infra_file.name[:25]}"
 
                     elif response.status_code == 422:
-                        status.update(label="⚠️ Modèle vision non disponible", state="error")
+                        status.update(label=":material/warning: Modèle vision non disponible", state="error")
                         st.warning(
                             "Le modèle vision (llava) n'est pas installé. "
                             "Lancez : `docker exec -it rag-ollama ollama pull llava`"
                         )
                     else:
-                        status.update(label="❌ Erreur", state="error")
+                        status.update(label=":material/error: Erreur", state="error")
                         st.error(f"Erreur: {response.text}")
                 except Exception as e:
-                    status.update(label="❌ Erreur de connexion", state="error")
+                    status.update(label=":material/error: Erreur de connexion", state="error")
                     st.error(f"Impossible de contacter l'API: {e}")
                     logger.error(f"Erreur analyse infrastructure: {e}")
     else:
@@ -1002,7 +1002,7 @@ with tab_infra:
 # TAB 3: COMPLIANCE REPORT
 # =====================================================================
 with tab_compliance:
-    st.markdown("## 📋 Rapport de Conformité Automatique")
+    st.markdown("## :material/policy: Rapport de Conformité Automatique")
     st.caption(
         "Générez un rapport d'analyse de conformité basé sur vos documents indexés. "
         "Le système posera automatiquement des questions-clés par réglementation et compilera les résultats."
@@ -1028,7 +1028,7 @@ with tab_compliance:
     col_gen, col_info = st.columns([0.3, 0.7])
     with col_gen:
         generate_report = st.button(
-            "🚀 Générer le rapport",
+            ":material/rocket: Générer le rapport",
             use_container_width=True,
             type="primary",
             disabled=not selected_regs,
@@ -1058,7 +1058,7 @@ with tab_compliance:
 
                 if response.status_code == 200:
                     result = response.json()
-                    status.update(label="✅ Rapport généré", state="complete")
+                    status.update(label=":material/check_circle: Rapport généré", state="complete")
 
                     # Build markdown report
                     report_md = "# Rapport de Conformité\n\n"
@@ -1070,7 +1070,7 @@ with tab_compliance:
                         report_md += f"## {reg}\n\n"
 
                         for qa in section["answers"]:
-                            with st.expander(f"❓ {qa['question']}", expanded=False):
+                            with st.expander(f":material/help: {qa['question']}", expanded=False):
                                 st.markdown(qa["answer"])
                                 if qa["confidence"] > 0:
                                     st.markdown(
@@ -1102,7 +1102,7 @@ with tab_compliance:
 
                     # Export button
                     st.download_button(
-                        "📥 Exporter le rapport en Markdown",
+                        ":material/download: Exporter le rapport en Markdown",
                         data=report_md,
                         file_name="rapport_conformite.md",
                         mime="text/markdown",
@@ -1110,11 +1110,11 @@ with tab_compliance:
                     )
 
                 else:
-                    status.update(label="❌ Erreur", state="error")
+                    status.update(label=":material/error: Erreur", state="error")
                     st.error(f"Erreur: {response.text}")
 
             except Exception as e:
-                status.update(label="❌ Erreur de connexion", state="error")
+                status.update(label=":material/error: Erreur de connexion", state="error")
                 st.error(f"Impossible de contacter l'API: {e}")
                 logger.error(f"Erreur rapport conformité: {e}")
     elif not selected_regs:
