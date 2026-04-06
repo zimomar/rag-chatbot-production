@@ -188,15 +188,29 @@ class RAGAgent:
             result = response.json()
             answer = result.get("response", "")
 
+            # Log metrics (Telemetry)
+            eval_count = result.get("eval_count", 0)
+            total_duration = result.get("total_duration", 0) / 1e9  # nanoseconds to seconds
+            model_name = result.get("model", settings.ollama_model)
+            logger.info(
+                f"[LLM Telemetry] Model: {model_name} | Tokens: {eval_count} | Duration: {total_duration:.2f}s"
+            )
+
             # Calcul de confiance basique
             avg_relevance = sum(res.relevance for res in context) / len(context)
 
             return {"answer": answer, "confidence": avg_relevance}
 
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout LLM (> {settings.ollama_timeout}s): {e}")
+            return {
+                "answer": f"Le modèle LLM a mis trop de temps à répondre (> {settings.ollama_timeout}s). Essayez de raccourcir la requête ou réessayez.",
+                "confidence": 0.0,
+            }
         except Exception as e:
             logger.error(f"Erreur lors de la génération: {e}")
             return {
-                "answer": "Une erreur technique est survenue lors de la génération.",
+                "answer": f"Une erreur technique est survenue: {str(e)[:150]}",
                 "confidence": 0.0,
             }
 
@@ -353,13 +367,27 @@ class RAGAgent:
                                 full_answer += token
                                 yield {"token": token}
                             if data.get("done", False):
+                                # Log metrics (Telemetry)
+                                eval_count = data.get("eval_count", 0)
+                                total_duration = data.get("total_duration", 0) / 1e9
+                                model_name = data.get("model", settings.ollama_model)
+                                logger.info(
+                                    f"[LLM Telemetry] Model: {model_name} | Tokens: {eval_count} | Duration: {total_duration:.2f}s"
+                                )
                                 break
                         except json_lib.JSONDecodeError:
                             continue
 
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout LLM streaming (> {settings.ollama_timeout}s): {e}")
+            yield {
+                "token": f"\n\n[Erreur: Temps de réponse dépassé (> {settings.ollama_timeout}s)]"
+            }
+            yield {"done": True, "sources": [], "confidence": 0.0}
+            return
         except Exception as e:
             logger.error(f"Erreur streaming: {e}")
-            yield {"token": "Erreur technique lors de la génération."}
+            yield {"token": f"\n\n[Erreur technique: {str(e)[:100]}]"}
             yield {"done": True, "sources": [], "confidence": 0.0}
             return
 
