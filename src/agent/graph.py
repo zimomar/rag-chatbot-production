@@ -453,7 +453,7 @@ class RAGAgent:
                     "options": {
                         "temperature": 0.1,
                         "num_predict": 1200,
-                        "num_ctx": 24000,  # Grand contexte pour le texte extrait du DAT complet
+                        "num_ctx": 8192,  # Maximum stable context limit to avoid OOM 500s
                     },
                 },
                 timeout=settings.ollama_timeout,
