@@ -452,7 +452,8 @@ async def analyze_infrastructure(
             eu_prompt += f"\nQuestion spécifique de l'utilisateur : {question}\n"
 
         # 3. Analyse RAG
-        response: RAGResponse = await agent.answer(eu_prompt)
+        search_query = "Réglementations cybersécurité NIS2 DORA AI Act RGPD CRA exigences"
+        response: RAGResponse = await agent.answer(eu_prompt, search_query=search_query)
 
         api_sources = [
             SourceModel(

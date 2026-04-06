@@ -54,6 +54,7 @@ class RAGState(TypedDict, total=False):
     """
 
     query: str
+    search_query: str | None
     context: list[SearchResult]
     answer: str
     sources: list[Source]
@@ -97,8 +98,8 @@ class RAGAgent:
         """
         Nœud de recherche : récupère les documents pertinents.
         """
-        query = state["query"]
-        logger.info(f"Recherche de contexte pour: {query}")
+        query = state.get("search_query") or state["query"]
+        logger.info(f"Recherche de contexte pour: {query[:100]}...")
 
         try:
             results = self.vector_store.search_by_text(
@@ -277,6 +278,7 @@ class RAGAgent:
         self,
         query: str,
         history: list[dict] | None = None,
+        search_query: str | None = None,
     ) -> RAGResponse:
         """
         Point d'entrée principal pour poser une question.
@@ -287,6 +289,7 @@ class RAGAgent:
         """
         initial_state: RAGState = {
             "query": query,
+            "search_query": search_query,
             "context": [],
             "answer": "",
             "sources": [],
@@ -308,6 +311,7 @@ class RAGAgent:
         self,
         query: str,
         history: list[dict] | None = None,
+        search_query: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Streaming : récupère les documents, puis stream la génération token par token.
@@ -319,7 +323,7 @@ class RAGAgent:
         # 1. Retrieval (synchrone, rapide)
         try:
             context = self.vector_store.search_by_text(
-                query_text=query, embedder=self.embedder, top_k=settings.retrieval_top_k
+                query_text=search_query or query, embedder=self.embedder, top_k=settings.retrieval_top_k
             )
         except Exception as e:
             logger.error(f"Erreur de retrieval streaming: {e}")
