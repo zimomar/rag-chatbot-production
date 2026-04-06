@@ -936,8 +936,14 @@ with tab_infra:
         if st.button(
             ":material/search: Analyser l'infrastructure", use_container_width=True, type="primary"
         ):
+            result = None
             with st.status("Analyse en cours...", expanded=True) as status:
-                st.write("📸 Description de l'infrastructure via modèle vision...")
+                filename_lower = (infra_file.name or "").lower()
+                if filename_lower.endswith((".docx", ".pdf")):
+                    st.write("📄 Lecture et extraction du document texte...")
+                else:
+                    st.write("📸 Description de l'infrastructure via modèle vision...")
+
                 try:
                     files = {"file": (infra_file.name, infra_file.getvalue())}
                     data = {"question": infra_question}
@@ -951,55 +957,10 @@ with tab_infra:
                     if response.status_code == 200:
                         result = response.json()
                         status.update(
-                            label=":material/check_circle: Analyse terminée", state="complete"
+                            label=":material/check_circle: Phase de traitement terminée",
+                            state="complete",
+                            expanded=False,
                         )
-
-                        with st.expander(
-                            "📝 Description extraite de l'infrastructure", expanded=False
-                        ):
-                            st.markdown(result["description"])
-
-                        st.markdown("### 📊 Analyse de Conformité")
-                        st.markdown(result["analysis"])
-
-                        if result["confidence"] > 0:
-                            st.markdown(
-                                f'<span class="confidence-badge">🧠 Confiance: {int(result["confidence"] * 100)}%</span>',
-                                unsafe_allow_html=True,
-                            )
-
-                        if result["sources"]:
-                            with st.expander("📎 Sources réglementaires consultées"):
-                                for src in result["sources"]:
-                                    st.markdown(
-                                        f"**{src['document']}** (Page {src['page'] or 'N/A'})"
-                                    )
-                                    st.caption(f"_{src['excerpt']}_")
-                                    score = src["relevance_score"]
-                                    st.markdown(
-                                        f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
-                                        unsafe_allow_html=True,
-                                    )
-
-                        conv = get_active_conversation()
-                        if conv:
-                            conv["messages"].append(
-                                {
-                                    "role": "user",
-                                    "content": f"[Analyse d'infrastructure] {infra_file.name}\n{infra_question or ''}",
-                                }
-                            )
-                            conv["messages"].append(
-                                {
-                                    "role": "assistant",
-                                    "content": result["analysis"],
-                                    "sources": result["sources"],
-                                    "confidence": result["confidence"],
-                                }
-                            )
-                            if conv["title"] == "Nouvelle conversation":
-                                conv["title"] = f"Analyse infra — {infra_file.name[:25]}"
-
                     elif response.status_code == 422:
                         status.update(
                             label=":material/warning: Modèle vision non disponible", state="error"
@@ -1015,6 +976,76 @@ with tab_infra:
                     status.update(label=":material/error: Erreur de connexion", state="error")
                     st.error(f"Impossible de contacter l'API: {e}")
                     logger.error(f"Erreur analyse infrastructure: {e}")
+
+            # Affichage en dehors de st.status pour éviter de le cacher
+            if result:
+                st.markdown("### 📊 Analyse de Conformité")
+                st.markdown(result["analysis"])
+
+                # Insertion des liens officiels dynamiquement
+                links = {
+                    "NIS2": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022L2555",
+                    "DORA": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2554",
+                    "AI Act": "https://artificialintelligenceact.eu/fr/",
+                    "RGPD": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32016R0679",
+                    "CRA": "https://digital-strategy.ec.europa.eu/fr/policies/cyber-resilience-act",
+                }
+
+                found_links = []
+                analysis_lower = result["analysis"].lower()
+                for reg, url in links.items():
+                    keyword = reg.lower()
+                    if (
+                        keyword in analysis_lower
+                        or (keyword == "rgpd" and "gdpr" in analysis_lower)
+                        or (keyword == "nis2" and "nis 2" in analysis_lower)
+                    ):
+                        found_links.append(f"- **{reg}** : [{url}]({url})")
+
+                if found_links:
+                    with st.expander(
+                        "📚 Liens officiels des réglementations mentionnées", expanded=True
+                    ):
+                        st.markdown("\n".join(found_links))
+
+                with st.expander("📝 Description extraite de l'infrastructure", expanded=False):
+                    st.markdown(result["description"])
+
+                if result["confidence"] > 0:
+                    st.markdown(
+                        f'<span class="confidence-badge">🧠 Confiance: {int(result["confidence"] * 100)}%</span>',
+                        unsafe_allow_html=True,
+                    )
+
+                if result["sources"]:
+                    with st.expander("📎 Sources réglementaires consultées"):
+                        for src in result["sources"]:
+                            st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
+                            st.caption(f"_{src['excerpt']}_")
+                            score = src["relevance_score"]
+                            st.markdown(
+                                f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
+                                unsafe_allow_html=True,
+                            )
+
+                conv = get_active_conversation()
+                if conv:
+                    conv["messages"].append(
+                        {
+                            "role": "user",
+                            "content": f"[Analyse d'infrastructure] {infra_file.name}\n{infra_question or ''}",
+                        }
+                    )
+                    conv["messages"].append(
+                        {
+                            "role": "assistant",
+                            "content": result["analysis"],
+                            "sources": result["sources"],
+                            "confidence": result["confidence"],
+                        }
+                    )
+                    if conv["title"] == "Nouvelle conversation":
+                        conv["title"] = f"Analyse infra — {infra_file.name[:25]}"
     else:
         st.markdown(
             """
