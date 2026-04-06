@@ -560,7 +560,9 @@ with st.sidebar:
     st.caption("Intelligence documentaire locale")
 
     # --- Theme Toggle ---
-    theme_label = ":material/dark_mode: Mode sombre" if is_dark else ":material/light_mode: Mode clair"
+    theme_label = (
+        ":material/dark_mode: Mode sombre" if is_dark else ":material/light_mode: Mode clair"
+    )
     if st.toggle(theme_label, value=is_dark, key="theme_toggle"):
         if not st.session_state.dark_mode:
             st.session_state.dark_mode = True
@@ -665,7 +667,11 @@ with st.sidebar:
 # MAIN CONTENT AREA — TABS
 # =====================================================================
 tab_chat, tab_infra, tab_compliance = st.tabs(
-    [":material/chat: Conversation", ":material/architecture: Analyse d'Infrastructure", ":material/policy: Rapport de Conformité"]
+    [
+        ":material/chat: Conversation",
+        ":material/architecture: Analyse d'Infrastructure",
+        ":material/policy: Rapport de Conformité",
+    ]
 )
 
 
@@ -673,6 +679,9 @@ tab_chat, tab_infra, tab_compliance = st.tabs(
 # TAB 1: CHAT
 # =====================================================================
 with tab_chat:
+    if "is_generating" not in st.session_state:
+        st.session_state.is_generating = False
+
     conv = get_active_conversation()
     if not conv:
         st.error("Aucune conversation sélectionnée.")
@@ -760,7 +769,9 @@ with tab_chat:
                 feedback_key = f"fb_{conv['id']}_{msg_idx}"
                 col_fb1, col_fb2, col_fb_space = st.columns([0.08, 0.08, 0.84])
                 with col_fb1:
-                    if st.button(":material/thumb_up:", key=f"{feedback_key}_up", help="Bonne réponse"):
+                    if st.button(
+                        ":material/thumb_up:", key=f"{feedback_key}_up", help="Bonne réponse"
+                    ):
                         try:
                             # Find the user question for this answer
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
@@ -777,7 +788,9 @@ with tab_chat:
                         except Exception:
                             pass
                 with col_fb2:
-                    if st.button(":material/thumb_down:", key=f"{feedback_key}_down", help="Mauvaise réponse"):
+                    if st.button(
+                        ":material/thumb_down:", key=f"{feedback_key}_down", help="Mauvaise réponse"
+                    ):
                         try:
                             user_q = conv["messages"][msg_idx - 1]["content"] if msg_idx > 0 else ""
                             httpx.post(
@@ -789,89 +802,105 @@ with tab_chat:
                                 },
                                 timeout=5,
                             )
-                            st.toast("📝 Merci, nous allons améliorer nos réponses.", icon=":material/thumb_down:")
+                            st.toast(
+                                "📝 Merci, nous allons améliorer nos réponses.",
+                                icon=":material/thumb_down:",
+                            )
                         except Exception:
                             pass
 
+    stream_placeholder = st.container()
+
     # --- Chat Input (Streaming + Multi-turn) ---
-    if prompt := st.chat_input("Que voulez-vous savoir ?"):
+    disabled = st.session_state.get("is_generating", False)
+    prompt = st.chat_input("Que voulez-vous savoir ?", disabled=disabled)
+
+    if prompt:
         if not conv["messages"]:
             conv["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
         conv["messages"].append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        st.session_state.is_generating = True
+        st.rerun()
 
-        with st.chat_message("assistant"):
-            # Build multi-turn history
-            history_payload = [
-                {"role": m["role"], "content": m["content"]}
-                for m in conv["messages"][:-1]  # exclude current prompt
-                if m["role"] in ("user", "assistant")
-            ]
+    if st.session_state.get("is_generating", False):
+        # Build multi-turn history
+        history_payload = [
+            {"role": m["role"], "content": m["content"]}
+            for m in conv["messages"][:-1]  # exclude current prompt
+            if m["role"] in ("user", "assistant")
+        ]
 
-            response_placeholder = st.empty()
-            full_response = ""
-            sources = []
-            confidence = 0.0
+        with stream_placeholder:
+            with st.chat_message("assistant"):
+                response_placeholder = st.empty()
+                full_response = ""
+                sources = []
+                confidence = 0.0
 
-            try:
-                # Streaming SSE request
-                with httpx.stream(
-                    "POST",
-                    f"{API_URL}/query/stream",
-                    json={"question": prompt, "history": history_payload or None},
-                    timeout=180,
-                ) as stream_response:
-                    if stream_response.status_code != 200:
-                        st.error(f"Erreur de l'agent: {stream_response.status_code}")
-                    else:
-                        for line in stream_response.iter_lines():
-                            if line.startswith("data: "):
-                                try:
-                                    data = json.loads(line[6:])
-                                    if "token" in data:
-                                        full_response += data["token"]
-                                        response_placeholder.markdown(full_response + "▌")
-                                    if data.get("done"):
-                                        sources = data.get("sources", [])
-                                        confidence = data.get("confidence", 0.0)
-                                except json.JSONDecodeError:
-                                    continue
+                try:
+                    # Streaming SSE request
+                    with httpx.stream(
+                        "POST",
+                        f"{API_URL}/query/stream",
+                        json={
+                            "question": conv["messages"][-1]["content"],
+                            "history": history_payload or None,
+                        },
+                        timeout=180,
+                    ) as stream_response:
+                        if stream_response.status_code != 200:
+                            st.error(f"Erreur de l'agent: {stream_response.status_code}")
+                        else:
+                            for line in stream_response.iter_lines():
+                                if line.startswith("data: "):
+                                    try:
+                                        data = json.loads(line[6:])
+                                        if "token" in data:
+                                            full_response += data["token"]
+                                            response_placeholder.markdown(full_response + "▌")
+                                        if data.get("done"):
+                                            sources = data.get("sources", [])
+                                            confidence = data.get("confidence", 0.0)
+                                    except json.JSONDecodeError:
+                                        continue
 
-                # Final display (remove cursor)
-                response_placeholder.markdown(full_response)
+                    # Final display (remove cursor)
+                    response_placeholder.markdown(full_response)
 
-                if confidence > 0:
-                    st.markdown(
-                        f'<span class="confidence-badge">🧠 Confiance: {int(confidence * 100)}%</span>',
-                        unsafe_allow_html=True,
+                    if confidence > 0:
+                        st.markdown(
+                            f'<span class="confidence-badge">🧠 Confiance: {int(confidence * 100)}%</span>',
+                            unsafe_allow_html=True,
+                        )
+
+                    if sources:
+                        with st.expander("📎 Sources consultées"):
+                            for src in sources:
+                                st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
+                                st.caption(f"_{src['excerpt']}_")
+                                score = src["relevance_score"]
+                                st.markdown(
+                                    f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
+                                    unsafe_allow_html=True,
+                                )
+
+                    conv["messages"].append(
+                        {
+                            "role": "assistant",
+                            "content": full_response,
+                            "sources": sources,
+                            "confidence": confidence,
+                        }
                     )
+                except Exception as e:
+                    response_placeholder.empty()
+                    error_msg = f"Impossible de contacter l'agent RAG : {e}"
+                    st.error(error_msg)
+                    logger.error(error_msg)
 
-                if sources:
-                    with st.expander("📎 Sources consultées"):
-                        for src in sources:
-                            st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
-                            st.caption(f"_{src['excerpt']}_")
-                            score = src["relevance_score"]
-                            st.markdown(
-                                f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
-                                unsafe_allow_html=True,
-                            )
-
-                conv["messages"].append(
-                    {
-                        "role": "assistant",
-                        "content": full_response,
-                        "sources": sources,
-                        "confidence": confidence,
-                    }
-                )
-            except Exception as e:
-                response_placeholder.empty()
-                error_msg = f"Impossible de contacter l'agent RAG : {e}"
-                st.error(error_msg)
-                logger.error(error_msg)
+        st.session_state.is_generating = False
+        st.rerun()
 
 
 # =====================================================================
@@ -904,7 +933,9 @@ with tab_infra:
         if infra_file.type and infra_file.type.startswith("image"):
             st.image(infra_file, caption="Aperçu du schéma", use_container_width=True)
 
-        if st.button(":material/search: Analyser l'infrastructure", use_container_width=True, type="primary"):
+        if st.button(
+            ":material/search: Analyser l'infrastructure", use_container_width=True, type="primary"
+        ):
             with st.status("Analyse en cours...", expanded=True) as status:
                 st.write("📸 Description de l'infrastructure via modèle vision...")
                 try:
@@ -919,7 +950,9 @@ with tab_infra:
 
                     if response.status_code == 200:
                         result = response.json()
-                        status.update(label=":material/check_circle: Analyse terminée", state="complete")
+                        status.update(
+                            label=":material/check_circle: Analyse terminée", state="complete"
+                        )
 
                         with st.expander(
                             "📝 Description extraite de l'infrastructure", expanded=False
@@ -968,7 +1001,9 @@ with tab_infra:
                                 conv["title"] = f"Analyse infra — {infra_file.name[:25]}"
 
                     elif response.status_code == 422:
-                        status.update(label=":material/warning: Modèle vision non disponible", state="error")
+                        status.update(
+                            label=":material/warning: Modèle vision non disponible", state="error"
+                        )
                         st.warning(
                             "Le modèle vision (llava) n'est pas installé. "
                             "Lancez : `docker exec -it rag-ollama ollama pull llava`"
