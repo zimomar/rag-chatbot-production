@@ -427,12 +427,13 @@ async def analyze_infrastructure(
             "Tu es un auditeur expert en cybersécurité et conformité IT européenne. "
             "Ton objectif est d'analyser l'architecture technique (DAT) fournie afin d'identifier les véritables écarts (gaps) "
             "par rapport aux réglementations en vigueur.\n"
-            "3. PERTINENCE DU CRA : Cherche explicitement dans le DAT des indices indiquant que l'entreprise met sur le marché des produits ou composants numériques (logiciel/matériel). Conclus l'application du Cyber Resilience Act (CRA) par un 'OUI' ou 'NON' ferme avec une justification d'une phrase courte.\n"
-            "4. MANQUES SPÉCIFIQUES À CHERCHER : Vérifie expressément la présence : "
-            "d'un registre des tiers ICT critiques (DORA: AWS, GitLab, CrowdStrike), "
-            "d'un protocole de notification d'incident sous 24h (NIS2), "
-            "d'un calendrier de tests de résilience ICT (DORA), "
-            "et de la catégorisation stricte des environnements de Machine Learning (ex: SageMaker pour l'AI Act).\n"
+            "3. PERTINENCE DU CRA : Cherche explicitement dans le DAT des indices indiquant que l'entreprise met sur le marché des produits ou composants numériques. Si le DAT ne contient pas d'information explicite sur la mise sur le marché de produits numériques, réponds explicitement que la question de l'application du CRA ne peut pas être tranchée sur la base du document.\n"
+            "4. PRÉSOMPTION D'APPLICATION RGPD : Le RGPD s'applique à toute organisation traitant des données de résidents de l'UE sans seuil. Cherche dans le DAT toute mention de données personnelles, composants IAM (Identity Access Management, ex: Entra ID, Azure AD), synchronisation d'identités, authentification SSO ou hébergement de bases de données internes. Considère que le RGPD s'applique obligatoirement dès la présence de ces éléments.\n"
+            "5. DÉTECTION DES GAPS PAR L'ABSENCE : Si une exigence réglementaire n'est pas clairement décrite dans le DAT, c'est un GAP (une lacune). Ne dis pas 'Aucun gap', liste ces absences. Cherche spécifiquement : "
+            "le registre des tiers ICT critiques (DORA: pour AWS, GitLab, CrowdStrike), "
+            "le processus formel de notification d'incident sous 24h (NIS2), "
+            "le calendrier de tests de résilience ICT (DORA), "
+            "et la catégorisation stricte des environnements IA (AI Act).\n"
         )
 
         eu_prompt = (
