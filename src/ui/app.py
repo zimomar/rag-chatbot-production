@@ -847,7 +847,7 @@ with tab_chat:
                             "question": conv["messages"][-1]["content"],
                             "history": history_payload or None,
                         },
-                        timeout=180,
+                        timeout=600,
                     ) as stream_response:
                         if stream_response.status_code != 200:
                             st.error(f"Erreur de l'agent: {stream_response.status_code}")
@@ -945,7 +945,7 @@ with tab_infra:
                         f"{API_URL}/analyze-infrastructure",
                         files=files,
                         data=data,
-                        timeout=180,
+                        timeout=600,
                     )
 
                     if response.status_code == 200:
@@ -1086,7 +1086,7 @@ with tab_compliance:
                 response = httpx.post(
                     f"{API_URL}/compliance-report",
                     json=payload,
-                    timeout=600,  # Long timeout — multiple RAG queries
+                    timeout=1200,  # Long timeout — multiple RAG queries
                 )
 
                 if response.status_code == 200:

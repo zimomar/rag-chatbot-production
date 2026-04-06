@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         description="Modèle vision pour l'analyse d'images (infrastructure)",
     )
     ollama_timeout: int = Field(
-        default=120,
+        default=600,
         description="Timeout en secondes pour les requêtes Ollama",
     )
 
