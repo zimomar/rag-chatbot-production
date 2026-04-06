@@ -515,7 +515,7 @@ class RAGAgent:
             # 2. Embedding et indexation temporaire
             logger.info("[DAT Analysis] Embedding chunks")
             embedded_chunks = self.embedder.embed_chunks(chunks)
-            self.store.add_documents(embedded_chunks)
+            self.vector_store.add_documents(embedded_chunks)
             logger.info(f"[DAT Analysis] Indexed {len(embedded_chunks)} chunks with source={temp_source}")
 
             # 3. Requêtes RAG ciblées pour chaque réglementation
@@ -532,7 +532,7 @@ class RAGAgent:
 
             for regulation, query in queries.items():
                 logger.info(f"[DAT Analysis] Searching for {regulation} related content")
-                results = await self.store.search_by_text(
+                results = self.vector_store.search_by_text(
                     query_text=query,
                     embedder=self.embedder,
                     top_k=3,  # Top 3 chunks par réglementation
@@ -606,7 +606,7 @@ class RAGAgent:
         finally:
             # 10. Nettoyage de l'index temporaire
             try:
-                self.store.delete_by_source(temp_source)
+                self.vector_store.delete_by_source(temp_source)
                 logger.info(f"[DAT Analysis] Cleaned up temporary index {temp_source}")
             except Exception as e:
                 logger.error(f"[DAT Analysis] Failed to cleanup temp index: {e}")
