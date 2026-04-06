@@ -7,6 +7,7 @@ historique de conversations et analyse d'infrastructure.
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime
 
@@ -427,8 +428,48 @@ LIGHT_CSS = """
 st.markdown(SHARED_CSS, unsafe_allow_html=True)
 st.markdown(DARK_CSS if is_dark else LIGHT_CSS, unsafe_allow_html=True)
 
-# Configuration de l'URL API
+# Initialisation de l'API et configurations locales
 API_URL = os.getenv("API_URL", "http://api:8000")
+
+
+def format_audit_report(text: str) -> str:
+    """Parse permissivement le texte Markdown pour injecter des badges HTML de priorité."""
+    try:
+        parts = text.split("### ")
+        if len(parts) <= 1:
+            return text
+
+        formatted_parts = [parts[0]]
+
+        for part in parts[1:]:
+            lines = part.split("\n", 1)
+            title = lines[0]
+            body = lines[1] if len(lines) > 1 else ""
+
+            # Recherche permissive (ex: - **Priorité**: Haute, - *Priorité* : Moyenne)
+            priority_match = re.search(
+                r"(?i)[-*]?\s*\**priorit[eé]\**\s*:\s*\**([a-zA-Z\s]+)", body
+            )
+            badge_html = ""
+            if priority_match:
+                p_val = priority_match.group(1).lower().replace("*", "").strip()
+                if p_val.startswith("haute"):
+                    badge_html = ' <span style="background-color: #ef4444; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">Haute</span>'
+                elif p_val.startswith("moyenne"):
+                    badge_html = ' <span style="background-color: #f97316; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">Moyenne</span>'
+                elif "basse" in p_val or "conforme" in p_val:
+                    badge_html = ' <span style="background-color: #22c55e; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">Basse</span>'
+                elif "non" in p_val or "applicable" in p_val:
+                    badge_html = ' <span style="background-color: #64748b; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">N/A</span>'
+
+            formatted_parts.append(f"### {title}{badge_html}\n{body}")
+
+        return "".join(formatted_parts)
+    except Exception as e:
+        logger.warning(f"Erreur lors du formatage HTML du rapport: {e}")
+        return text
+
+
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
 
 # Logging
@@ -913,20 +954,18 @@ with tab_infra:
         "concernés par les réglementations européennes (NIS2, DORA, AI Act, RGPD, etc.)"
     )
 
-    col_upload, col_question = st.columns([1, 1])
+    infra_file = st.file_uploader(
+        "Schéma d'infrastructure ou Document d'architecture (Image, PDF, DOCX)",
+        type=["png", "jpg", "jpeg", "svg", "pdf", "docx"],
+        key="infra_upload",
+    )
 
-    with col_upload:
-        infra_file = st.file_uploader(
-            "Schéma d'infrastructure ou Document d'architecture (Image, PDF, DOCX)",
-            type=["png", "jpg", "jpeg", "svg", "pdf", "docx"],
-            key="infra_upload",
-        )
-
-    with col_question:
+    with st.expander("Ajouter un contexte ou une question spécifique (Optionnel)", expanded=False):
         infra_question = st.text_area(
-            "Question spécifique (optionnel)",
-            placeholder="Ex: Quels composants de mon infrastructure sont impactés par NIS2 ?",
+            "Cadrage métier ou interrogation particulière",
+            placeholder="Ex: L'entreprise est un point de terminaison bancaire soumis à DORA. Je veux un focus sur... ?",
             height=100,
+            label_visibility="collapsed",
         )
 
     if infra_file:
@@ -957,7 +996,7 @@ with tab_infra:
                     if response.status_code == 200:
                         result = response.json()
                         status.update(
-                            label=":material/check_circle: Phase de traitement terminée",
+                            label="Analyse terminée",
                             state="complete",
                             expanded=False,
                         )
@@ -979,8 +1018,20 @@ with tab_infra:
 
             # Affichage en dehors de st.status pour éviter de le cacher
             if result:
+                st.success(
+                    "✅ **Phase de traitement achevée avec succès** - Rapport consolidé ci-dessous"
+                )
                 st.markdown("### 📊 Analyse de Conformité")
-                st.markdown(result["analysis"])
+                formatted_report = format_audit_report(result["analysis"])
+                st.markdown(formatted_report, unsafe_allow_html=True)
+
+                st.download_button(
+                    label=":material/download: Télécharger le rapport (Markdown)",
+                    data=result["analysis"],
+                    file_name=f"rapport_audit_{datetime.now().strftime('%Y%m%d_%H%M')}.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                )
 
                 # Insertion des liens officiels dynamiquement
                 links = {
