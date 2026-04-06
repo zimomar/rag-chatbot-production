@@ -55,6 +55,7 @@ class RAGState(TypedDict, total=False):
 
     query: str
     search_query: str | None
+    system_prompt: str | None
     context: list[SearchResult]
     answer: str
     sources: list[Source]
@@ -110,14 +111,15 @@ class RAGAgent:
             logger.error(f"Erreur lors du retrieval: {e}")
             return {"context": []}
 
-    def _build_prompt(
+    def _build_messages(
         self,
         query: str,
         context: list[SearchResult],
+        system_prompt: str | None = None,
         history: list[dict] | None = None,
-    ) -> str:
-        """Construit le prompt complet pour le LLM."""
-        # Optimization: Format XML ultra-compact (économise ~15% de tokens vs string)
+    ) -> list[dict]:
+        """Construit le tableau de messages pour le modèle Chat."""
+        # Optimization: Format XML ultra-compact
         context_xml = "".join(
             [
                 f"<s i='{i + 1}' src='{res.source}' pg='{res.metadata.get('page', 'N/A')}'>{res.content}</s>"
@@ -125,32 +127,26 @@ class RAGAgent:
             ]
         )
 
-        # Instruction concise pour favoriser le KV Cache d'Ollama
-        system_instruction = (
-            "Assistant technique. Réponds via <ctx> uniquement. "
-            "Cite comme [i]. Si info manquante, dis 'Information non trouvée'."
-        )
+        if system_prompt:
+            final_system = f"{system_prompt}\n\nContexte réglementaire documentaire (RAG):\n<ctx>{context_xml}</ctx>"
+        else:
+            final_system = (
+                "Assistant technique. Réponds via <ctx> uniquement. "
+                "Cite comme [i]. Si info manquante, dis 'Information non trouvée'.\n\n"
+                f"<ctx>{context_xml}</ctx>"
+            )
 
-        # Multi-turn: condense l'historique en contexte conversationnel
-        history_block = ""
+        messages = [{"role": "system", "content": final_system}]
+
+        # Multi-turn: condense l'historique
         if history:
-            # Garde les N derniers échanges pour ne pas exploser le contexte
-            recent = history[-6:]  # 3 derniers échanges (user+assistant)
-            history_lines = []
+            recent = history[-6:]
             for msg in recent:
-                role = "User" if msg["role"] == "user" else "Assistant"
-                # Tronque les messages longs de l'historique
-                content = msg["content"][:300]
-                history_lines.append(f"{role}: {content}")
-            history_block = "\nHistorique:\n" + "\n".join(history_lines) + "\n"
+                content = msg["content"][:500]  # Tronqué pour préserver le contexte
+                messages.append({"role": msg.get("role", "user"), "content": content})
 
-        return (
-            f"Instruction: {system_instruction}\n"
-            f"<ctx>{context_xml}</ctx>\n"
-            f"{history_block}"
-            f"Question: {query}\n"
-            "Réponse:"
-        )
+        messages.append({"role": "user", "content": query})
+        return messages
 
     def generate(self, state: RAGState) -> dict[str, Any]:
         """
@@ -166,18 +162,19 @@ class RAGAgent:
                 "confidence": 0.0,
             }
 
-        full_prompt = self._build_prompt(query, context, history)
+        messages = self._build_messages(query, context, state.get("system_prompt"), history)
 
         try:
             response = httpx.post(
-                f"{self.base_url}/api/generate",
+                f"{self.base_url}/api/chat",
                 json={
                     "model": settings.ollama_model,
-                    "prompt": full_prompt,
+                    "messages": messages,
                     "stream": False,
                     "options": {
                         "temperature": 0.1,
                         "num_predict": 1000,
+                        "num_ctx": 8192,
                     },
                 },
                 timeout=settings.ollama_timeout,
@@ -187,7 +184,7 @@ class RAGAgent:
                 raise Exception(f"Erreur Ollama: {response.status_code}")
 
             result = response.json()
-            answer = result.get("response", "")
+            answer = result.get("message", {}).get("content", "")
 
             # Log metrics (Telemetry)
             eval_count = result.get("eval_count", 0)
@@ -279,6 +276,7 @@ class RAGAgent:
         query: str,
         history: list[dict] | None = None,
         search_query: str | None = None,
+        system_prompt: str | None = None,
     ) -> RAGResponse:
         """
         Point d'entrée principal pour poser une question.
@@ -290,6 +288,7 @@ class RAGAgent:
         initial_state: RAGState = {
             "query": query,
             "search_query": search_query,
+            "system_prompt": system_prompt,
             "context": [],
             "answer": "",
             "sources": [],
@@ -312,6 +311,7 @@ class RAGAgent:
         query: str,
         history: list[dict] | None = None,
         search_query: str | None = None,
+        system_prompt: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Streaming : récupère les documents, puis stream la génération token par token.
@@ -336,21 +336,22 @@ class RAGAgent:
             yield {"done": True, "sources": [], "confidence": 0.0}
             return
 
-        full_prompt = self._build_prompt(query, context, history)
+        messages = self._build_messages(query, context, system_prompt, history)
 
         # 2. Streaming generation
         full_answer = ""
         try:
             with httpx.stream(
                 "POST",
-                f"{self.base_url}/api/generate",
+                f"{self.base_url}/api/chat",
                 json={
                     "model": settings.ollama_model,
-                    "prompt": full_prompt,
+                    "messages": messages,
                     "stream": True,
                     "options": {
                         "temperature": 0.1,
                         "num_predict": 1000,
+                        "num_ctx": 8192,
                     },
                 },
                 timeout=settings.ollama_timeout,
@@ -366,7 +367,7 @@ class RAGAgent:
                     if line:
                         try:
                             data = json_lib.loads(line)
-                            token = data.get("response", "")
+                            token = data.get("message", {}).get("content", "")
                             if token:
                                 full_answer += token
                                 yield {"token": token}

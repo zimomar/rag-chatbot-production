@@ -419,14 +419,14 @@ async def analyze_infrastructure(
         # 2. Construction de la requête d'analyse
         # 2. Construction de la requête d'analyse
         system_context = (
-            "Tu es un auditeur expert en cybersécurité et conformité IT européenne. "
-            "Ton objectif est d'analyser l'architecture technique (DAT) fournie afin d'identifier les véritables écarts (gaps) "
-            "par rapport aux réglementations en vigueur.\n\n"
             "RÈGLES STRICTES DE L'ANALYSE (ZÉRO HALLUCINATION) :\n"
             "1. LIS LE DOCUMENT FOURNI : Ne recommande pas de mettre en place des mesures fondamentales (ex: chiffrement AES-256/TLS 1.3, outils existants type Vault ou KMS) si elles sont DÉJÀ documentées dans l'architecture. Identifie ce qui MANQUE réellement.\n"
             "2. ÉCHÉANCES FACTUELLES INJECTÉES COMME CONTEXTE : Considère comme une vérité absolue les dates suivantes, indépendamment de tes connaissances passées : DORA est applicable depuis Janvier 2025, "
             "NIS2 depuis Octobre 2024, le CRA a été adopté en Nov 2024 avec une application jusqu'en Déc. 2027, "
-            "et l'AI Act a un déploiement progressif 2025-2027. Ne mentionne jamais de dates passées inutiles (ex: 2018 pour RGPD).\n"
+            "et l'AI Act a un déploiement progressif 2025-2027. Ne mentionne jamais de dates passées inutiles (ex: 2018 pour RGPD).\n\n"
+            "Tu es un auditeur expert en cybersécurité et conformité IT européenne. "
+            "Ton objectif est d'analyser l'architecture technique (DAT) fournie afin d'identifier les véritables écarts (gaps) "
+            "par rapport aux réglementations en vigueur.\n"
             "3. PERTINENCE DU CRA : Cherche explicitement dans le DAT des indices indiquant que l'entreprise met sur le marché des produits ou composants numériques (logiciel/matériel). Conclus l'application du Cyber Resilience Act (CRA) par un 'OUI' ou 'NON' ferme avec une justification d'une phrase courte.\n"
             "4. MANQUES SPÉCIFIQUES À CHERCHER : Vérifie expressément la présence : "
             "d'un registre des tiers ICT critiques (DORA: AWS, GitLab, CrowdStrike), "
@@ -436,7 +436,6 @@ async def analyze_infrastructure(
         )
 
         eu_prompt = (
-            f"{system_context}\n"
             f"Voici la description de l'infrastructure IT extraite du document :\n\n"
             f"```text\n{description}\n```\n\n"
             f"Génère ton rapport d'audit EN APPLIQUANT EXACTEMENT CE FORMAT DE SORTIE POUR CHAQUE RÉGLEMENTATION (NIS2, DORA, RGPD, AI Act, CRA) :\n"
@@ -453,7 +452,9 @@ async def analyze_infrastructure(
 
         # 3. Analyse RAG
         search_query = "Réglementations cybersécurité NIS2 DORA AI Act RGPD CRA exigences"
-        response: RAGResponse = await agent.answer(eu_prompt, search_query=search_query)
+        response: RAGResponse = await agent.answer(
+            eu_prompt, search_query=search_query, system_prompt=system_context
+        )
 
         api_sources = [
             SourceModel(
