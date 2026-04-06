@@ -31,8 +31,11 @@ SHARED_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    h1, h2, h3, p, span, label, div, li, textarea, input, button {
+    h1, h2, h3, p, span:not(.material-symbols-rounded), label, div, li, textarea, input, button {
         font-family: 'Inter', sans-serif !important;
+    }
+    .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded' !important;
     }
 
     @keyframes fadeSlideIn {
@@ -695,14 +698,14 @@ with tab_chat:
         # Suggested prompts
         cols = st.columns(3)
         suggestions = [
-            (":material/summarize:", "Résumer un document", "Fais un résumé du dernier document indexé"),
+            ("summarize", "Résumer un document", "Fais un résumé du dernier document indexé"),
             (
-                ":material/search:",
+                "search",
                 "Recherche précise",
                 "Quelles sont les obligations de conformité décrites dans mes documents ?",
             ),
             (
-                ":material/gavel:",
+                "gavel",
                 "Réglementation EU",
                 "Quels articles du RGPD s'appliquent au traitement de données de mes clients ?",
             ),
@@ -712,7 +715,7 @@ with tab_chat:
                 st.markdown(
                     f"""
                 <div class="welcome-card">
-                    <div class="emoji">{emoji}</div>
+                    <div class="emoji"><span class="material-symbols-rounded" style="font-size: 2.5rem;">{emoji}</span></div>
                     <div class="card-title">{title}</div>
                     <div class="card-desc">{prompt_text[:60]}...</div>
                 </div>
@@ -986,7 +989,7 @@ with tab_infra:
         st.markdown(
             """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
-            <div class="emoji">🏗️</div>
+            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3rem;">architecture</span></div>
             <div class="card-title">Uploadez votre schéma d'infrastructure</div>
             <div class="card-desc">
                 Diagramme réseau, architecture cloud, ou tout schéma technique.<br>
@@ -1123,7 +1126,7 @@ with tab_compliance:
         st.markdown(
             """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
-            <div class="emoji">📋</div>
+            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3rem;">policy</span></div>
             <div class="card-title">Rapport de Conformité</div>
             <div class="card-desc">
                 Sélectionnez les réglementations ci-dessus et cliquez sur "Générer".<br>
