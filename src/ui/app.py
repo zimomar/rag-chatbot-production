@@ -31,12 +31,7 @@ SHARED_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    h1, h2, h3, p, span:not(.material-symbols-rounded), label, div, li, textarea, input, button {
-        font-family: 'Inter', sans-serif !important;
-    }
-    .material-symbols-rounded {
-        font-family: 'Material Symbols Rounded' !important;
-    }
+
 
     @keyframes fadeSlideIn {
         from { opacity: 0; transform: translateY(12px); }
