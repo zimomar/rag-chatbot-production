@@ -448,6 +448,11 @@ async def analyze_infrastructure(
             f"- **Éléments conformes trouvés dans le DAT** : [A, B, C (ex: chiffrement KMS présent)]\n"
             f"- **Gaps identifiés** : [Processus manquant 1, Test manquant 2...]\n"
             f"- **Priorité** : [Haute/Moyenne/Basse]\n\n"
+            f"RÈGLE DE COHÉRENCE PRIORITÉ :\n"
+            f"- Haute : Gaps critiques identifiés ET réglementation applicable\n"
+            f"- Moyenne : Gaps mineurs ou améliorations recommandées\n"
+            f"- Basse : Aucun gap identifié (éléments conformes uniquement) OU réglementation non applicable/indéterminée\n"
+            f"IMPORTANT: Si tu écris 'Aucun gap' ou liste uniquement des éléments conformes, la priorité DOIT être Basse, pas Moyenne.\n\n"
             f"Attention: Ne génère ni introduction ni conclusion superflue, fournis uniquement les blocs demandés."
         )
 
