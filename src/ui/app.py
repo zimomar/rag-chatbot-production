@@ -172,52 +172,52 @@ SHARED_CSS = """
 DARK_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: #0a0f1e !important;
-        background-image:
-            radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%) !important;
+        background: linear-gradient(135deg, #1a1f35 0%, #151a2e 100%) !important;
+        background-attachment: fixed !important;
     }
     .stAppHeader {
-        background: rgba(10, 15, 30, 0.8) !important;
-        backdrop-filter: blur(12px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background: rgba(26, 31, 53, 0.85) !important;
+        backdrop-filter: blur(16px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(15, 23, 42, 0.95) !important;
-        backdrop-filter: blur(8px) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(180deg, rgba(21, 26, 46, 0.97) 0%, rgba(18, 23, 41, 0.97) 100%) !important;
+        backdrop-filter: blur(12px) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
     }
-    [data-testid="stSidebar"] * { color: #94a3b8 !important; }
+    [data-testid="stSidebar"] * { color: #9ca3af !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #e2e8f0 !important;
-        -webkit-text-fill-color: #e2e8f0 !important;
+        color: #f3f4f6 !important;
+        -webkit-text-fill-color: #f3f4f6 !important;
         background: none !important;
         font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] .stButton > button {
-        background: rgba(37, 99, 235, 0.1) !important;
-        border: 1px solid rgba(37, 99, 235, 0.2) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%) !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important;
         color: #93c5fd !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(37, 99, 235, 0.15) !important;
-        border-color: rgba(37, 99, 235, 0.3) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.2) 100%) !important;
+        border-color: rgba(59, 130, 246, 0.35) !important;
         transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
     }
 
     [data-testid="stChatMessage"] {
-        background: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(26, 35, 50, 0.6) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
         border-radius: var(--radius-lg) !important;
         padding: 1.25rem !important;
         margin-bottom: 1rem !important;
         max-width: 85%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(37, 99, 235, 0.08) !important;
-        border-color: rgba(37, 99, 235, 0.15) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.08) 100%) !important;
+        border-color: rgba(59, 130, 246, 0.2) !important;
         margin-left: auto !important;
     }
 
@@ -227,11 +227,11 @@ DARK_CSS = """
         gap: 0.5rem;
         margin-top: 1rem;
         padding-top: 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
     .source-card {
-        background: rgba(15, 23, 42, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius-sm);
         padding: 0.75rem;
         font-size: 0.8rem;
@@ -239,8 +239,8 @@ DARK_CSS = """
         flex: 1 1 180px;
     }
     .source-card:hover {
-        background: rgba(15, 23, 42, 0.7);
-        border-color: rgba(37, 99, 235, 0.3);
+        background: rgba(30, 41, 59, 0.6);
+        border-color: rgba(59, 130, 246, 0.3);
     }
     .source-tag {
         font-size: 0.65rem;
@@ -248,68 +248,83 @@ DARK_CSS = """
         text-transform: uppercase;
         padding: 2px 6px;
         border-radius: 4px;
-        background: rgba(37, 99, 235, 0.15);
+        background: rgba(59, 130, 246, 0.2);
         color: #93c5fd;
         margin-right: 6px;
         letter-spacing: 0.03em;
     }
-    [data-testid="stChatMessage"] * { color: #cbd5e1 !important; }
+    [data-testid="stChatMessage"] * { color: #d1d5db !important; }
 
     div[data-testid="stBottom"] {
         background: transparent !important;
     }
     div[data-testid="stBottom"] > div { background: transparent !important; }
     [data-testid="stChatInput"] {
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(26, 35, 50, 0.9) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: var(--radius-lg) !important;
-        backdrop-filter: blur(8px) !important;
+        backdrop-filter: blur(12px) !important;
         padding: 4px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stChatInput"] textarea {
-        color: #f1f5f9 !important;
+        color: #f3f4f6 !important;
         font-size: 0.9375rem !important;
     }
     [data-testid="stChatInput"] button {
-        background: #2563eb !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
         border-radius: var(--radius-md) !important;
     }
     [data-testid="stChatInput"] button:hover {
-        background: #1d4ed8 !important;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
     [data-testid="stExpander"] {
-        background: rgba(15, 23, 42, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background: rgba(30, 41, 59, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-radius: var(--radius-md) !important;
     }
 
     .main h1 {
         font-weight: 600 !important;
         letter-spacing: -0.02em !important;
-        color: #f1f5f9 !important;
+        color: #f9fafb !important;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     }
 
     .main h2 {
-        color: #e2e8f0 !important;
+        color: #f3f4f6 !important;
         font-weight: 600 !important;
     }
 
     .dashboard-card {
-        background: rgba(15, 23, 42, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(26, 35, 50, 0.5) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .welcome-card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(26, 35, 50, 0.6) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius-lg);
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .welcome-card:hover {
-        background: rgba(15, 23, 42, 0.8);
-        border-color: rgba(37, 99, 235, 0.3);
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(37, 99, 235, 0.15) 100%);
+        border-color: rgba(59, 130, 246, 0.3);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(30, 41, 59, 0.3) !important;
+        color: #9ca3af !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%) !important;
+        color: #93c5fd !important;
+        border-bottom: 2px solid #3b82f6 !important;
     }
 </style>
 """
