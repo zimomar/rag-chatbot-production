@@ -563,9 +563,13 @@ LIGHT_CSS = """
 </style>
 """
 
-# Inject CSS
-st.markdown(SHARED_CSS, unsafe_allow_html=True)
-st.markdown(DARK_CSS if is_dark else LIGHT_CSS, unsafe_allow_html=True)
+# Inject CSS (with timestamp comment to force browser reload)
+import time
+css_timestamp = f"/* CSS loaded at {time.time()} */"
+
+st.markdown(SHARED_CSS.replace("</style>", f"{css_timestamp}</style>"), unsafe_allow_html=True)
+theme_css = DARK_CSS if is_dark else LIGHT_CSS
+st.markdown(theme_css.replace("</style>", f"{css_timestamp}</style>"), unsafe_allow_html=True)
 
 # Initialisation de l'API et configurations locales
 API_URL = os.getenv("API_URL", "http://api:8000")
