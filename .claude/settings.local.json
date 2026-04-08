@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile:*)",
+      "Bash(python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix\\(dat\\): implement hybrid RAG extraction to resolve AI Act detection failure and eliminate hallucinations\n\nProblem diagnosed:\n- AI Act section \\(2 pages with XGBoost, Vertex AI, SHAP values\\) was lost due to brutal 28k char truncation\n- DORA analysis mixed chunks from different DAT documents\n- Hardcoded 100% confidence despite hallucinations\n- num_ctx=8192 tokens caused context overflow\n\nSolution implemented:\n- New method `analyze_dat_with_rag_extraction\\(\\)` with intelligent chunking\n- 5 targeted RAG queries per regulation \\(AI Act, DORA, RGPD, NIS2, CRA\\)\n- Top 3 chunks per query, max 15 total, deduped and sorted by relevance\n- Real confidence score calculated from average chunk relevance\n- Temporary ChromaDB indexing with strict source filtering\n- No more truncation - full document processed with smart extraction\n- Context optimized to ~15k chars of most relevant sections\n\nExpected improvements:\n- AI Act will now detect XGBoost, Vertex AI, SHAP from section 2\n- DORA won''t mix documents \\(where={source: temp_source} filter\\)\n- Confidence will reflect actual chunk relevance \\(not hardcoded 1.0\\)\n- No more \"aucun élément d 'IA/ML\" false negatives\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(produits numériques sur le marché. Cette qualification juridique)",
+      "Bash(nécessite une analyse contractuelle et commerciale hors périmètre)",
+      "Bash(du document technique.\"\n  * Non applicable → Pure internal infrastructure\n\nKey principle: Express uncertainty clearly rather than masking it\nwith tags or binary conclusions. \"Indéterminé\" is professionally\ndefensible; \"priority low, no gaps\" on unresolved legal questions is not.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(des éléments conformes, la priorité DOIT être Basse, pas Moyenne.\"\n\nExpected outcome: RGPD with zero gaps will now show \"Priorité: Basse\"\ninstead of \"Moyenne\", maintaining report coherence.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

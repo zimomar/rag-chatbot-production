@@ -210,6 +210,11 @@ __marimo__/
 # RAG Local - Project Specific
 # =============================================================================
 
+# Deployment secrets (DO NOT COMMIT!)
+.env.deploy
+.env.local
+.env.*.local
+
 # ChromaDB local data
 chroma_data/
 *.chroma

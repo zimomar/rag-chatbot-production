@@ -30,152 +30,140 @@ is_dark = st.session_state.dark_mode
 # --- Shared CSS (animations, layout, fonts — theme-independent) ---
 SHARED_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
 
     :root {
-        --primary: #6366f1;
-        --primary-hover: #4f46e5;
-        --sidebar-width: 320px;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --sidebar-width: 280px;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
     }
 
-    @keyframes slideUpFade {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
-    @keyframes pulseSoft {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .stApp {
-        font-family: 'Inter', -apple-system, sans-serif !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
 
     #MainMenu, footer { visibility: hidden; }
 
     .hero-section {
-        padding: 4rem 1rem;
-        animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-        text-align: center;
+        padding: 3rem 1rem 2rem;
+        animation: fadeIn 0.6s ease-out;
     }
     .hero-section h1 {
-        font-size: 3.5rem !important;
-        margin-bottom: 1rem !important;
-        font-weight: 800 !important;
+        font-size: 2.5rem !important;
+        margin-bottom: 0.5rem !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
     }
     .hero-subtitle {
-        font-size: 1.2rem !important;
-        opacity: 0.8;
-        max-width: 600px;
+        font-size: 1rem !important;
+        opacity: 0.65;
+        max-width: 480px;
         margin: 0 auto !important;
+        font-weight: 400 !important;
     }
 
     .welcome-card {
-        padding: 2rem;
-        text-align: center;
+        padding: 1.75rem;
         cursor: pointer;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 1rem;
+        align-items: flex-start;
+        gap: 0.75rem;
         height: 100%;
+        transition: all 0.2s ease;
     }
     .welcome-card .emoji {
-        font-size: 2.5rem;
-        background: linear-gradient(135deg, var(--primary), #06b6d4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        font-size: 2rem;
+        opacity: 0.9;
+        margin-bottom: 0.25rem;
     }
     .welcome-card .card-title {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.4;
     }
     .welcome-card .card-desc {
-        font-size: 0.9rem;
-        line-height: 1.5;
-        opacity: 0.7;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        opacity: 0.6;
     }
 
     [data-testid="stChatMessage"] {
-        animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        animation: fadeIn 0.3s ease-out;
     }
 
     .confidence-badge {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 500;
-        letter-spacing: -0.01em;
-        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0;
+        opacity: 0.75;
     }
 
-    /* Customizing Tabs */
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding-bottom: 4px;
+        gap: 0.5rem;
+        border-bottom: none;
+        padding-bottom: 0;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 45px !important;
-        padding: 0 24px !important;
-        font-weight: 600 !important;
-        font-size: 0.9rem !important;
+        height: 40px !important;
+        padding: 0 1rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
         border: none !important;
+        border-radius: var(--radius-md) !important;
         transition: all 0.2s ease !important;
     }
-    .stTabs [aria-selected="true"] {
-        color: var(--primary) !important;
-    }
-
-    @keyframes typingPulse {
-        0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
-        30% { opacity: 1; transform: scale(1.1); }
-    }
-    .typing-indicator {
-        display: flex; align-items: center; gap: 6px; padding: 1rem;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 16px; width: fit-content;
-    }
-    .typing-indicator .dot {
-        width: 8px; height: 8px; border-radius: 50%; background: var(--primary);
-        animation: typingPulse 1.4s ease-in-out infinite;
-    }
-    .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
 
     .dashboard-card {
-        background: rgba(30, 41, 59, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 1.5rem;
+        padding: 1.25rem;
         margin-bottom: 1rem;
-        backdrop-filter: blur(12px);
+        border-radius: var(--radius-md);
     }
     .status-pill {
         display: inline-flex;
         align-items: center;
-        padding: 2px 12px;
-        border-radius: 99px;
-        font-size: 0.75rem;
-        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.03em;
     }
-    .status-high { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-    .status-med { background: rgba(249, 115, 22, 0.1); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2); }
-    .status-low { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .status-high { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .status-med { background: rgba(249, 115, 22, 0.12); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2); }
+    .status-low { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
 
-    /* Scrollbar refinement */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb {
-        background: rgba(99, 102, 241, 0.2);
+        background: rgba(148, 163, 184, 0.3);
         border-radius: 10px;
     }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.4); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
 
-    /* Button adjustments */
+    /* Buttons */
     .stButton button {
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        padding: 0.5rem 1.5rem !important;
+        border-radius: var(--radius-md) !important;
+        font-weight: 500 !important;
+        padding: 0.625rem 1.25rem !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s ease !important;
     }
 </style>
 """
@@ -184,89 +172,86 @@ SHARED_CSS = """
 DARK_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: radial-gradient(circle at top left, #1e1b4b, #0f172a 40%),
-                    radial-gradient(circle at bottom right, #1e293b, #0f172a 40%) !important;
-        background-attachment: fixed !important;
+        background: #0a0f1e !important;
+        background-image:
+            radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%) !important;
     }
     .stAppHeader {
-        background: rgba(15, 23, 42, 0.7) !important;
-        backdrop-filter: blur(24px) saturate(180%) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background: rgba(10, 15, 30, 0.8) !important;
+        backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(15, 23, 42, 0.8) !important;
-        backdrop-filter: blur(32px) saturate(200%) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(8px) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
     [data-testid="stSidebar"] * { color: #94a3b8 !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #f8fafc !important; -webkit-text-fill-color: #f8fafc !important; background: none !important;
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+        background: none !important;
+        font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] .stButton > button {
-        background: rgba(99, 102, 241, 0.08) !important;
-        border: 1px solid rgba(99, 102, 241, 0.15) !important;
-        color: #c7d2fe !important; border-radius: 12px !important;
-        backdrop-filter: blur(12px) !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        font-weight: 500 !important; font-size: 0.85rem !important;
+        background: rgba(37, 99, 235, 0.1) !important;
+        border: 1px solid rgba(37, 99, 235, 0.2) !important;
+        color: #93c5fd !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(99, 102, 241, 0.15) !important;
-        border-color: rgba(99, 102, 241, 0.3) !important;
-        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15) !important;
-        transform: translateY(-2px) !important;
+        background: rgba(37, 99, 235, 0.15) !important;
+        border-color: rgba(37, 99, 235, 0.3) !important;
+        transform: translateY(-1px) !important;
     }
 
     [data-testid="stChatMessage"] {
-        background: rgba(30, 41, 59, 0.4) !important;
-        backdrop-filter: blur(24px) saturate(150%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.04) !important;
-        border-radius: 24px !important;
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3) !important;
-        padding: 1.5rem !important;
-        margin-bottom: 1.5rem !important;
-        max-width: 90%;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1.25rem !important;
+        margin-bottom: 1rem !important;
+        max-width: 85%;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(99, 102, 241, 0.1) !important;
-        border-color: rgba(99, 102, 241, 0.2) !important;
+        background: rgba(37, 99, 235, 0.08) !important;
+        border-color: rgba(37, 99, 235, 0.15) !important;
         margin-left: auto !important;
-    }
-    [data-testid="stChatMessage"] div[data-testid="stChatMessageContent"] {
-        padding-top: 0.5rem;
     }
 
     .source-container {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: 0.5rem;
         margin-top: 1rem;
         padding-top: 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
     .source-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-size: 0.85rem;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.75rem;
+        font-size: 0.8rem;
         transition: all 0.2s ease;
-        flex: 1 1 200px;
+        flex: 1 1 180px;
     }
     .source-card:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(99, 102, 241, 0.3);
+        background: rgba(15, 23, 42, 0.7);
+        border-color: rgba(37, 99, 235, 0.3);
     }
     .source-tag {
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.65rem;
+        font-weight: 600;
         text-transform: uppercase;
         padding: 2px 6px;
         border-radius: 4px;
-        background: rgba(99, 102, 241, 0.2);
-        color: #818cf8;
+        background: rgba(37, 99, 235, 0.15);
+        color: #93c5fd;
         margin-right: 6px;
+        letter-spacing: 0.03em;
     }
     [data-testid="stChatMessage"] * { color: #cbd5e1 !important; }
 
@@ -275,46 +260,56 @@ DARK_CSS = """
     }
     div[data-testid="stBottom"] > div { background: transparent !important; }
     [data-testid="stChatInput"] {
-        background: rgba(30, 41, 59, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 20px !important;
-        backdrop-filter: blur(24px) !important;
-        box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: var(--radius-lg) !important;
+        backdrop-filter: blur(8px) !important;
         padding: 4px !important;
     }
-    [data-testid="stChatInput"] textarea { color: #f8fafc !important; }
+    [data-testid="stChatInput"] textarea {
+        color: #f1f5f9 !important;
+        font-size: 0.9375rem !important;
+    }
     [data-testid="stChatInput"] button {
-        background: #6366f1 !important;
-        border-radius: 14px !important;
-        transition: all 0.3s ease !important;
+        background: #2563eb !important;
+        border-radius: var(--radius-md) !important;
+    }
+    [data-testid="stChatInput"] button:hover {
+        background: #1d4ed8 !important;
     }
 
     [data-testid="stExpander"] {
-        background: rgba(15, 23, 42, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 16px !important;
+        background: rgba(15, 23, 42, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-radius: var(--radius-md) !important;
     }
-    [data-testid="stExpander"] summary { color: #818cf8 !important; }
 
     .main h1 {
-        font-weight: 800 !important;
-        letter-spacing: -0.025em !important;
-        background: linear-gradient(135deg, #f8fafc 0%, #818cf8 50%, #6366f1 100%) !important;
-        -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
+        color: #f1f5f9 !important;
+    }
+
+    .main h2 {
+        color: #e2e8f0 !important;
+        font-weight: 600 !important;
+    }
+
+    .dashboard-card {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .welcome-card {
-        background: rgba(30, 41, 59, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        backdrop-filter: blur(16px);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-lg);
+        transition: all 0.2s ease;
     }
     .welcome-card:hover {
-        background: rgba(99, 102, 241, 0.1);
-        border-color: rgba(99, 102, 241, 0.2);
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(37, 99, 235, 0.3);
+        transform: translateY(-2px);
     }
 </style>
 """
@@ -323,61 +318,122 @@ DARK_CSS = """
 LIGHT_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: radial-gradient(circle at top left, #f5f3ff, #f8fafc 40%),
-                    radial-gradient(circle at bottom right, #e0e7ff, #f8fafc 40%) !important;
-        background-attachment: fixed !important;
+        background: #f8fafc !important;
+        background-image:
+            radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%) !important;
     }
     .stAppHeader {
-        background: rgba(255, 255, 255, 0.7) !important;
-        backdrop-filter: blur(24px) saturate(180%) !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(32px) saturate(200%) !important;
-        border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(8px) !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
-    [data-testid="stSidebar"] * { color: #475569 !important; }
+    [data-testid="stSidebar"] * { color: #64748b !important; }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: #1e293b !important;
+        -webkit-text-fill-color: #1e293b !important;
+        background: none !important;
+        font-weight: 600 !important;
+    }
+
+    [data-testid="stSidebar"] .stButton > button {
+        background: rgba(37, 99, 235, 0.06) !important;
+        border: 1px solid rgba(37, 99, 235, 0.12) !important;
+        color: #2563eb !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(37, 99, 235, 0.1) !important;
+        border-color: rgba(37, 99, 235, 0.2) !important;
+        transform: translateY(-1px) !important;
+    }
 
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.6) !important;
-        backdrop-filter: blur(24px) saturate(150%) !important;
-        border: 1px solid rgba(0, 0, 0, 0.04) !important;
-        border-radius: 20px !important;
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05) !important;
-        padding: 1.5rem !important; margin-bottom: 1.5rem !important;
+        background: rgba(255, 255, 255, 0.8) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1.25rem !important;
+        margin-bottom: 1rem !important;
+        max-width: 85%;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(99, 102, 241, 0.04) !important;
-        border-color: rgba(99, 102, 241, 0.08) !important;
+        background: rgba(37, 99, 235, 0.04) !important;
+        border-color: rgba(37, 99, 235, 0.12) !important;
+        margin-left: auto !important;
+    }
+    [data-testid="stChatMessage"] * { color: #334155 !important; }
+
+    .source-container {
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .source-card {
+        background: rgba(248, 250, 252, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .source-card:hover {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(37, 99, 235, 0.2);
+    }
+    .source-tag {
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
     }
 
     [data-testid="stChatInput"] {
-        background: rgba(255, 255, 255, 0.8) !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
-        border-radius: 20px !important;
-        backdrop-filter: blur(24px) !important;
-        box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: var(--radius-lg) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #0f172a !important;
+        font-size: 0.9375rem !important;
+    }
+    [data-testid="stChatInput"] button {
+        background: #2563eb !important;
+        border-radius: var(--radius-md) !important;
+    }
+    [data-testid="stChatInput"] button:hover {
+        background: #1d4ed8 !important;
+    }
+
+    [data-testid="stExpander"] {
+        background: rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-radius: var(--radius-md) !important;
     }
 
     .main h1 {
-        background: linear-gradient(135deg, #1e293b 0%, #4f46e5 50%, #6366f1 100%) !important;
-        -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
+        color: #0f172a !important;
+    }
+
+    .main h2 {
+        color: #1e293b !important;
+        font-weight: 600 !important;
+    }
+
+    .dashboard-card {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .welcome-card {
-        background: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 24px;
-        backdrop-filter: blur(16px);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: var(--radius-lg);
+        transition: all 0.2s ease;
     }
     .welcome-card:hover {
-        background: rgba(255, 255, 255, 0.9);
-        border-color: rgba(99, 102, 241, 0.2);
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(37, 99, 235, 0.2);
+        transform: translateY(-2px);
     }
 </style>
 """
