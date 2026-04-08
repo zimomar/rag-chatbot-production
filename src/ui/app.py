@@ -172,8 +172,22 @@ SHARED_CSS = """
 DARK_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: linear-gradient(135deg, #1a1f35 0%, #151a2e 100%) !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
         background-attachment: fixed !important;
+        position: relative;
+    }
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
     }
     .stAppHeader {
         background: rgba(26, 31, 53, 0.85) !important;
@@ -289,8 +303,10 @@ DARK_CSS = """
     .main h1 {
         font-weight: 600 !important;
         letter-spacing: -0.02em !important;
-        color: #f9fafb !important;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: none !important;
     }
 
     .main h2 {
@@ -304,16 +320,17 @@ DARK_CSS = """
     }
 
     .welcome-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(26, 35, 50, 0.6) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(26, 35, 50, 0.7) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: var(--radius-lg);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .welcome-card:hover {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(37, 99, 235, 0.15) 100%);
-        border-color: rgba(59, 130, 246, 0.3);
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.18) 100%);
+        border-color: rgba(59, 130, 246, 0.4);
+        transform: translateY(-6px);
+        box-shadow: 0 12px 32px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.3) !important;
     }
 
     /* Tabs styling */
