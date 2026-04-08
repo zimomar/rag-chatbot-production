@@ -350,92 +350,130 @@ DARK_CSS = """
 LIGHT_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: #f8fafc !important;
-        background-image:
-            radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%) !important;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%) !important;
+        background-attachment: fixed !important;
+        position: relative;
+    }
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
     }
     .stAppHeader {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(12px) !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(16px) !important;
         border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(8px) !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
+        backdrop-filter: blur(12px) !important;
         border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
     [data-testid="stSidebar"] * { color: #64748b !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #1e293b !important;
-        -webkit-text-fill-color: #1e293b !important;
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
         background: none !important;
         font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] .stButton > button {
-        background: rgba(37, 99, 235, 0.06) !important;
-        border: 1px solid rgba(37, 99, 235, 0.12) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%) !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important;
         color: #2563eb !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(37, 99, 235, 0.1) !important;
-        border-color: rgba(37, 99, 235, 0.2) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.2) 100%) !important;
+        border-color: rgba(59, 130, 246, 0.35) !important;
         transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
     }
 
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.8) !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%) !important;
         border: 1px solid rgba(0, 0, 0, 0.08) !important;
         border-radius: var(--radius-lg) !important;
         padding: 1.25rem !important;
         margin-bottom: 1rem !important;
         max-width: 85%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(37, 99, 235, 0.04) !important;
-        border-color: rgba(37, 99, 235, 0.12) !important;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
+        border-color: rgba(59, 130, 246, 0.2) !important;
         margin-left: auto !important;
     }
-    [data-testid="stChatMessage"] * { color: #334155 !important; }
+    [data-testid="stChatMessage"] * { color: #1e293b !important; }
 
     .source-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
         border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
     .source-card {
-        background: rgba(248, 250, 252, 0.8);
+        background: rgba(248, 250, 252, 0.9);
         border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        flex: 1 1 180px;
     }
     .source-card:hover {
-        background: rgba(255, 255, 255, 0.9);
-        border-color: rgba(37, 99, 235, 0.2);
+        background: rgba(255, 255, 255, 1);
+        border-color: rgba(59, 130, 246, 0.3);
     }
     .source-tag {
-        background: rgba(37, 99, 235, 0.1);
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(59, 130, 246, 0.15);
         color: #2563eb;
+        margin-right: 6px;
+        letter-spacing: 0.03em;
     }
 
+    div[data-testid="stBottom"] {
+        background: transparent !important;
+    }
+    div[data-testid="stBottom"] > div { background: transparent !important; }
     [data-testid="stChatInput"] {
-        background: rgba(255, 255, 255, 0.9) !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
         border-radius: var(--radius-lg) !important;
-        backdrop-filter: blur(8px) !important;
+        backdrop-filter: blur(12px) !important;
+        padding: 4px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     [data-testid="stChatInput"] textarea {
         color: #0f172a !important;
         font-size: 0.9375rem !important;
     }
     [data-testid="stChatInput"] button {
-        background: #2563eb !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
         border-radius: var(--radius-md) !important;
     }
     [data-testid="stChatInput"] button:hover {
-        background: #1d4ed8 !important;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
     [data-testid="stExpander"] {
-        background: rgba(255, 255, 255, 0.6) !important;
+        background: rgba(255, 255, 255, 0.7) !important;
         border: 1px solid rgba(0, 0, 0, 0.06) !important;
         border-radius: var(--radius-md) !important;
     }
@@ -443,29 +481,45 @@ LIGHT_CSS = """
     .main h1 {
         font-weight: 600 !important;
         letter-spacing: -0.02em !important;
-        color: #0f172a !important;
+        background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: none !important;
     }
 
     .main h2 {
-        color: #1e293b !important;
+        color: #0f172a !important;
         font-weight: 600 !important;
     }
 
     .dashboard-card {
-        background: rgba(255, 255, 255, 0.7);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.7) 100%);
         border: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .welcome-card {
-        background: rgba(255, 255, 255, 0.8);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(248, 250, 252, 0.9) 100%);
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: var(--radius-lg);
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
     .welcome-card:hover {
-        background: rgba(255, 255, 255, 0.95);
-        border-color: rgba(37, 99, 235, 0.2);
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%);
+        border-color: rgba(59, 130, 246, 0.3);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255, 255, 255, 0.5) !important;
+        color: #64748b !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.08) 100%) !important;
+        color: #2563eb !important;
+        border-bottom: 2px solid #3b82f6 !important;
     }
 </style>
 """
