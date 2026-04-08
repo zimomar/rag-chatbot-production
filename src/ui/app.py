@@ -30,238 +30,292 @@ is_dark = st.session_state.dark_mode
 # --- Shared CSS (animations, layout, fonts — theme-independent) ---
 SHARED_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
 
+    :root {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --sidebar-width: 320px;
+    }
 
-
-    @keyframes fadeSlideIn {
-        from { opacity: 0; transform: translateY(12px); }
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes typingPulse {
-        0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
-        30% { opacity: 1; transform: scale(1.1); }
+    @keyframes pulseSoft {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .stApp {
+        font-family: 'Inter', -apple-system, sans-serif !important;
     }
 
     #MainMenu, footer { visibility: hidden; }
 
+    .hero-section {
+        padding: 4rem 1rem;
+        animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        text-align: center;
+    }
+    .hero-section h1 {
+        font-size: 3.5rem !important;
+        margin-bottom: 1rem !important;
+        font-weight: 800 !important;
+    }
+    .hero-subtitle {
+        font-size: 1.2rem !important;
+        opacity: 0.8;
+        max-width: 600px;
+        margin: 0 auto !important;
+    }
+
+    .welcome-card {
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        height: 100%;
+    }
+    .welcome-card .emoji {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, var(--primary), #06b6d4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    .welcome-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .welcome-card .card-desc {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        opacity: 0.7;
+    }
+
+    [data-testid="stChatMessage"] {
+        animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .confidence-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+    }
+
+    /* Customizing Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 4px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 45px !important;
+        padding: 0 24px !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        border: none !important;
+        transition: all 0.2s ease !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: var(--primary) !important;
+    }
+
+    @keyframes typingPulse {
+        0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+        30% { opacity: 1; transform: scale(1.1); }
+    }
     .typing-indicator {
-        display: flex; align-items: center; gap: 6px; padding: 0.5rem 1rem;
+        display: flex; align-items: center; gap: 6px; padding: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 16px; width: fit-content;
     }
     .typing-indicator .dot {
-        width: 8px; height: 8px; border-radius: 50%;
+        width: 8px; height: 8px; border-radius: 50%; background: var(--primary);
         animation: typingPulse 1.4s ease-in-out infinite;
     }
     .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
 
-    .welcome-card {
-        border-radius: 16px; padding: 1.5rem; cursor: pointer;
-        transition: all 0.3s ease; text-align: center;
+    .dashboard-card {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(12px);
     }
-    .welcome-card:hover { transform: translateY(-4px); }
-    .welcome-card .emoji { font-size: 2rem; margin-bottom: 0.5rem; }
-    .welcome-card .card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
-    .welcome-card .card-desc { font-size: 0.8rem; }
-
-    .hero-section { text-align: center; padding: 3rem 1rem; animation: fadeSlideIn 0.6s ease-out; }
-    .hero-section h1 { font-size: 2.5rem !important; margin-bottom: 0.5rem !important; }
-
-    .confidence-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 12px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
     }
+    .status-high { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .status-med { background: rgba(249, 115, 22, 0.1); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2); }
+    .status-low { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
 
-    .conv-title {
-        font-weight: 500; font-size: 0.85rem;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .conv-date { font-size: 0.7rem; }
-
-    [data-testid="stChatMessage"] {
-        border-radius: 16px !important;
-        animation: fadeSlideIn 0.4s ease-out !important;
-        margin-bottom: 1rem !important;
-    }
-
-    ::-webkit-scrollbar { width: 6px; }
+    /* Scrollbar refinement */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.2);
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.4); }
 
-    /* Theme toggle styling */
-    .theme-toggle-label {
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    /* Global Primary Button Color Override */
-    .stButton button[kind="primary"],
-    [data-testid="stDownloadButton"] button[kind="primary"] {
-        background-color: #6366f1 !important;
-        border-color: #6366f1 !important;
-        color: white !important;
-        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
-        transition: all 0.2s ease !important;
-    }
-    .stButton button[kind="primary"]:hover,
-    [data-testid="stDownloadButton"] button[kind="primary"]:hover {
-        background-color: #4f46e5 !important;
-        border-color: #4f46e5 !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+    /* Button adjustments */
+    .stButton button {
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 1.5rem !important;
     }
 </style>
-"""
+""""""
 
 # --- Dark Theme CSS ---
 DARK_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 30%, #1e293b 60%, #0c1445 100%) !important;
+        background: radial-gradient(circle at top left, #1e1b4b, #0f172a 40%),
+                    radial-gradient(circle at bottom right, #1e293b, #0f172a 40%) !important;
         background-attachment: fixed !important;
     }
     .stAppHeader {
-        background: rgba(15, 23, 42, 0.8) !important;
-        backdrop-filter: blur(20px) !important;
-        border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+        background: rgba(15, 23, 42, 0.7) !important;
+        backdrop-filter: blur(24px) saturate(180%) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(15, 23, 42, 0.85) !important;
-        backdrop-filter: blur(24px) saturate(180%) !important;
-        border-right: 1px solid rgba(255,255,255,0.08) !important;
+        background: rgba(15, 23, 42, 0.8) !important;
+        backdrop-filter: blur(32px) saturate(200%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
-    [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
+    [data-testid="stSidebar"] * { color: #94a3b8 !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
         color: #f8fafc !important; -webkit-text-fill-color: #f8fafc !important; background: none !important;
     }
 
     [data-testid="stSidebar"] .stButton > button {
-        background: rgba(59, 130, 246, 0.15) !important;
-        border: 1px solid rgba(59, 130, 246, 0.3) !important;
-        color: #93c5fd !important; border-radius: 10px !important;
-        backdrop-filter: blur(10px) !important; transition: all 0.3s ease !important; font-weight: 500 !important;
+        background: rgba(99, 102, 241, 0.08) !important;
+        border: 1px solid rgba(99, 102, 241, 0.15) !important;
+        color: #c7d2fe !important; border-radius: 12px !important;
+        backdrop-filter: blur(12px) !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        font-weight: 500 !important; font-size: 0.85rem !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(59, 130, 246, 0.3) !important;
-        border-color: rgba(59, 130, 246, 0.6) !important;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.2) !important;
-        transform: translateY(-1px) !important;
+        background: rgba(99, 102, 241, 0.15) !important;
+        border-color: rgba(99, 102, 241, 0.3) !important;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15) !important;
+        transform: translateY(-2px) !important;
     }
 
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(16px) saturate(150%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-        color: #e2e8f0 !important;
+        background: rgba(30, 41, 59, 0.4) !important;
+        backdrop-filter: blur(24px) saturate(150%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.04) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3) !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        max-width: 90%;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(59, 130, 246, 0.08) !important;
-        border-color: rgba(59, 130, 246, 0.15) !important;
+        background: rgba(99, 102, 241, 0.1) !important;
+        border-color: rgba(99, 102, 241, 0.2) !important;
+        margin-left: auto !important;
     }
-    [data-testid="stChatMessage"] * { color: #e2e8f0 !important; }
+    [data-testid="stChatMessage"] div[data-testid="stChatMessageContent"] {
+        padding-top: 0.5rem;
+    }
+
+    .source-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .source-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        flex: 1 1 200px;
+    }
+    .source-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+    .source-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        margin-right: 6px;
+    }
+    [data-testid="stChatMessage"] * { color: #cbd5e1 !important; }
 
     div[data-testid="stBottom"] {
-        background: rgba(15, 23, 42, 0.6) !important; backdrop-filter: blur(20px) !important;
+        background: transparent !important;
     }
     div[data-testid="stBottom"] > div { background: transparent !important; }
     [data-testid="stChatInput"] {
-        background: rgba(255, 255, 255, 0.06) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(12px) !important;
+        background: rgba(30, 41, 59, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        backdrop-filter: blur(24px) !important;
+        box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        padding: 4px !important;
     }
-    [data-testid="stChatInput"] textarea { color: #f1f5f9 !important; background: transparent !important; }
-    [data-testid="stChatInput"] textarea::placeholder { color: rgba(148, 163, 184, 0.6) !important; }
+    [data-testid="stChatInput"] textarea { color: #f8fafc !important; }
     [data-testid="stChatInput"] button {
-        background: linear-gradient(135deg, #3b82f6, #06b6d4) !important;
-        color: white !important; border-radius: 10px !important; border: none !important;
+        background: #6366f1 !important;
+        border-radius: 14px !important;
         transition: all 0.3s ease !important;
     }
-    [data-testid="stChatInput"] button:hover {
-        box-shadow: 0 0 16px rgba(59, 130, 246, 0.4) !important; transform: scale(1.05) !important;
-    }
-
-    [data-testid="stFileUploader"] {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 2px dashed rgba(148, 163, 184, 0.2) !important;
-        border-radius: 12px !important; padding: 10px !important;
-        backdrop-filter: blur(8px) !important; transition: all 0.3s ease !important;
-    }
-    [data-testid="stFileUploader"]:hover {
-        border-color: rgba(59, 130, 246, 0.4) !important; background: rgba(59, 130, 246, 0.05) !important;
-    }
-    [data-testid="stFileUploader"] section { background: transparent !important; }
-    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"] {
-        background: rgba(255, 255, 255, 0.08) !important; color: #93c5fd !important;
-        border: 1px solid rgba(59, 130, 246, 0.25) !important; border-radius: 8px !important;
-        transition: all 0.3s ease !important;
-    }
-    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"]:hover {
-        background: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important;
-    }
-    [data-testid="stFileUploader"] label { color: #94a3b8 !important; }
 
     [data-testid="stExpander"] {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 12px !important; backdrop-filter: blur(8px) !important;
+        background: rgba(15, 23, 42, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 16px !important;
     }
-    [data-testid="stExpander"] summary { color: #93c5fd !important; }
+    [data-testid="stExpander"] summary { color: #818cf8 !important; }
 
-    .stProgress > div > div { background: rgba(255,255,255,0.08) !important; border-radius: 8px !important; }
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #3b82f6, #06b6d4) !important; border-radius: 8px !important;
-    }
-
-    .main h1, .main h2, .main h3 { color: #f8fafc !important; }
     .main h1 {
         font-weight: 800 !important;
-        background: linear-gradient(135deg, #f8fafc, #3b82f6, #06b6d4) !important;
+        letter-spacing: -0.025em !important;
+        background: linear-gradient(135deg, #f8fafc 0%, #818cf8 50%, #6366f1 100%) !important;
         -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
     }
-    .main p, .main span, .main div, .main li { color: #cbd5e1 !important; }
-
-    [data-testid="stStatusWidget"], .stAlert {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-        border-radius: 10px !important; backdrop-filter: blur(12px) !important; color: #e2e8f0 !important;
-    }
-
-    .stTabs [data-baseweb="tab-list"] { gap: 8px !important; background: transparent !important; }
-    .stTabs [data-baseweb="tab"] {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 10px 10px 0 0 !important; color: #94a3b8 !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: rgba(59, 130, 246, 0.15) !important;
-        border-color: rgba(59, 130, 246, 0.3) !important; color: #93c5fd !important;
-    }
-    hr { border-color: rgba(255,255,255,0.08) !important; }
 
     .welcome-card {
-        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px) saturate(150%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        backdrop-filter: blur(16px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .welcome-card:hover {
-        background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
     }
-    .welcome-card .card-title { color: #f1f5f9 !important; }
-    .welcome-card .card-desc { color: #94a3b8 !important; }
-    .hero-subtitle { color: #94a3b8 !important; }
-    .confidence-badge {
-        background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: #93c5fd !important;
-    }
-    .typing-indicator .dot { background: #3b82f6; }
-    .conv-title { color: #e2e8f0 !important; }
-    .conv-date { color: #64748b !important; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 </style>
 """
 
@@ -269,176 +323,64 @@ DARK_CSS = """
 LIGHT_CSS = """
 <style>
     .stApp, .stAppViewContainer, .stMain {
-        background: linear-gradient(135deg, #f0f4ff 0%, #e8eef9 30%, #f8fafc 60%, #eef2ff 100%) !important;
+        background: radial-gradient(circle at top left, #f5f3ff, #f8fafc 40%),
+                    radial-gradient(circle at bottom right, #e0e7ff, #f8fafc 40%) !important;
         background-attachment: fixed !important;
     }
     .stAppHeader {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(20px) !important;
-        border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(24px) saturate(180%) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
     }
 
     [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
-        background: rgba(255, 255, 255, 0.75) !important;
-        backdrop-filter: blur(24px) saturate(180%) !important;
-        border-right: 1px solid rgba(0,0,0,0.08) !important;
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(32px) saturate(200%) !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
     }
-    [data-testid="stSidebar"] * { color: #334155 !important; }
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #1e293b !important; -webkit-text-fill-color: #1e293b !important; background: none !important;
-    }
-
-    [data-testid="stSidebar"] .stButton > button {
-        background: rgba(59, 130, 246, 0.08) !important;
-        border: 1px solid rgba(59, 130, 246, 0.2) !important;
-        color: #2563eb !important; border-radius: 10px !important;
-        backdrop-filter: blur(10px) !important; transition: all 0.3s ease !important; font-weight: 500 !important;
-    }
-    [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(59, 130, 246, 0.15) !important;
-        border-color: rgba(59, 130, 246, 0.4) !important;
-        box-shadow: 0 0 16px rgba(59, 130, 246, 0.12) !important;
-        transform: translateY(-1px) !important;
-    }
+    [data-testid="stSidebar"] * { color: #475569 !important; }
 
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.7) !important;
-        backdrop-filter: blur(16px) saturate(150%) !important;
-        border: 1px solid rgba(0, 0, 0, 0.06) !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-        color: #1e293b !important;
+        background: rgba(255, 255, 255, 0.6) !important;
+        backdrop-filter: blur(24px) saturate(150%) !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05) !important;
+        padding: 1.5rem !important; margin-bottom: 1.5rem !important;
     }
     [data-testid="stChatMessage"]:has(div[data-testid="user-avatar"]) {
-        background: rgba(239, 246, 255, 0.8) !important;
-        border-color: rgba(59, 130, 246, 0.1) !important;
+        background: rgba(99, 102, 241, 0.04) !important;
+        border-color: rgba(99, 102, 241, 0.08) !important;
     }
-    [data-testid="stChatMessage"] * { color: #1e293b !important; }
 
-    div[data-testid="stBottom"] {
-        background: rgba(248, 250, 252, 0.7) !important; backdrop-filter: blur(20px) !important;
-    }
-    div[data-testid="stBottom"] > div { background: transparent !important; }
     [data-testid="stChatInput"] {
         background: rgba(255, 255, 255, 0.8) !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-        backdrop-filter: blur(12px) !important;
-    }
-    [data-testid="stChatInput"] textarea { color: #1e293b !important; background: transparent !important; }
-    [data-testid="stChatInput"] textarea::placeholder { color: rgba(100, 116, 139, 0.6) !important; }
-    [data-testid="stChatInput"] button {
-        background: linear-gradient(135deg, #3b82f6, #06b6d4) !important;
-        color: white !important; border-radius: 10px !important; border: none !important;
-        transition: all 0.3s ease !important;
-    }
-    [data-testid="stChatInput"] button:hover {
-        box-shadow: 0 0 16px rgba(59, 130, 246, 0.3) !important; transform: scale(1.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 20px !important;
+        backdrop-filter: blur(24px) !important;
+        box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1) !important;
     }
 
-    [data-testid="stFileUploader"] {
-        background: rgba(255, 255, 255, 0.5) !important;
-        border: 2px dashed rgba(100, 116, 139, 0.25) !important;
-        border-radius: 12px !important; padding: 10px !important;
-        backdrop-filter: blur(8px) !important; transition: all 0.3s ease !important;
-    }
-    [data-testid="stFileUploader"]:hover {
-        border-color: rgba(59, 130, 246, 0.4) !important; background: rgba(239, 246, 255, 0.5) !important;
-    }
-    [data-testid="stFileUploader"] section { background: transparent !important; }
-    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"] {
-        background: rgba(255, 255, 255, 0.8) !important; color: #2563eb !important;
-        border: 1px solid rgba(59, 130, 246, 0.2) !important; border-radius: 8px !important;
-        transition: all 0.3s ease !important;
-    }
-    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"]:hover {
-        background: rgba(239, 246, 255, 0.8) !important; border-color: #3b82f6 !important;
-    }
-    [data-testid="stFileUploader"] label { color: #64748b !important; }
-
-    /* ============ TEXT AREA / INPUTS ============ */
-    [data-testid="stTextArea"] textarea,
-    .stTextArea textarea,
-    .stTextInput input {
-        background: rgba(255, 255, 255, 0.8) !important;
-        color: #1e293b !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-        border-radius: 10px !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    [data-testid="stTextArea"] textarea::placeholder,
-    .stTextArea textarea::placeholder,
-    .stTextInput input::placeholder {
-        color: rgba(100, 116, 139, 0.6) !important;
-    }
-    [data-testid="stTextArea"] label,
-    .stTextArea label,
-    .stTextInput label {
-        color: #475569 !important;
-    }
-
-    [data-testid="stExpander"] {
-        background: rgba(255, 255, 255, 0.5) !important;
-        border: 1px solid rgba(0, 0, 0, 0.06) !important;
-        border-radius: 12px !important; backdrop-filter: blur(8px) !important;
-    }
-    [data-testid="stExpander"] summary { color: #2563eb !important; }
-
-    .stProgress > div > div { background: rgba(0,0,0,0.06) !important; border-radius: 8px !important; }
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #3b82f6, #06b6d4) !important; border-radius: 8px !important;
-    }
-
-    .main h1, .main h2, .main h3 { color: #1e293b !important; }
     .main h1 {
-        font-weight: 800 !important;
-        background: linear-gradient(135deg, #1e293b, #3b82f6, #06b6d4) !important;
+        background: linear-gradient(135deg, #1e293b 0%, #4f46e5 50%, #6366f1 100%) !important;
         -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
     }
-    .main p, .main span, .main div, .main li { color: #475569 !important; }
-
-    [data-testid="stStatusWidget"], .stAlert {
-        background: rgba(255,255,255,0.6) !important;
-        border: 1px solid rgba(0,0,0,0.06) !important;
-        border-radius: 10px !important; backdrop-filter: blur(12px) !important; color: #334155 !important;
-    }
-
-    .stTabs [data-baseweb="tab-list"] { gap: 8px !important; background: transparent !important; }
-    .stTabs [data-baseweb="tab"] {
-        background: rgba(255,255,255,0.5) !important;
-        border: 1px solid rgba(0,0,0,0.06) !important;
-        border-radius: 10px 10px 0 0 !important; color: #64748b !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: rgba(59, 130, 246, 0.08) !important;
-        border-color: rgba(59, 130, 246, 0.2) !important; color: #2563eb !important;
-    }
-    hr { border-color: rgba(0,0,0,0.08) !important; }
 
     .welcome-card {
-        background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(16px) saturate(150%);
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 24px;
+        backdrop-filter: blur(16px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .welcome-card:hover {
-        background: rgba(239, 246, 255, 0.8); border-color: rgba(59, 130, 246, 0.2);
-        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(99, 102, 241, 0.2);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
     }
-    .welcome-card .card-title { color: #1e293b !important; }
-    .welcome-card .card-desc { color: #64748b !important; }
-    .hero-subtitle { color: #64748b !important; }
-    .confidence-badge {
-        background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.15); color: #2563eb !important;
-    }
-    .typing-indicator .dot { background: #3b82f6; }
-    .conv-title { color: #334155 !important; }
-    .conv-date { color: #94a3b8 !important; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 </style>
-"""
+""""""
 
 # Inject CSS
 st.markdown(SHARED_CSS, unsafe_allow_html=True)
@@ -449,41 +391,80 @@ API_URL = os.getenv("API_URL", "http://api:8000")
 
 
 def format_audit_report(text: str) -> str:
-    """Parse permissivement le texte Markdown pour injecter des badges HTML de priorité."""
+    """Parse permissivement le texte Markdown pour injecter des badges HTML de priorité et des cartes."""
     try:
         parts = text.split("### ")
         if len(parts) <= 1:
-            return text
+            return f'<div class="dashboard-card">{text}</div>'
 
-        formatted_parts = [parts[0]]
+        formatted_report = parts[0]
 
         for part in parts[1:]:
             lines = part.split("\n", 1)
             title = lines[0]
             body = lines[1] if len(lines) > 1 else ""
 
-            # Recherche permissive (ex: - **Priorité**: Haute, - *Priorité* : Moyenne)
+            # Recherche permissive de priorité
             priority_match = re.search(
                 r"(?i)[-*]?\s*\**priorit[eé]\**\s*:\s*\**([a-zA-Z\s]+)", body
             )
             badge_html = ""
+            pill_class = "status-low"
             if priority_match:
                 p_val = priority_match.group(1).lower().replace("*", "").strip()
                 if p_val.startswith("haute"):
-                    badge_html = ' <span style="background-color: #ef4444; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">Haute</span>'
+                    pill_class = "status-high"
                 elif p_val.startswith("moyenne"):
-                    badge_html = ' <span style="background-color: #f97316; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">Moyenne</span>'
-                elif "basse" in p_val or "conforme" in p_val:
-                    badge_html = ' <span style="background-color: #22c55e; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">Basse</span>'
-                elif "non" in p_val or "applicable" in p_val:
-                    badge_html = ' <span style="background-color: #64748b; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-left: 10px; vertical-align: top;">N/A</span>'
+                    pill_class = "status-med"
+                
+                badge_html = f'<span class="status-pill {pill_class}">{p_val.upper()}</span>'
 
-            formatted_parts.append(f"### {title}{badge_html}\n{body}")
+            formatted_report += f"""
+            <div class="dashboard-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1.1rem; color: #f8fafc;">{title}</h4>
+                    {badge_html}
+                </div>
+                <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+                    {body}
+                </div>
+            </div>
+            """
 
-        return "".join(formatted_parts)
+        return formatted_report
     except Exception as e:
         logger.warning(f"Erreur lors du formatage HTML du rapport: {e}")
         return text
+
+
+def render_sources(sources):
+    """Rendu élégant des sources sous forme de cartes HTML."""
+    if not sources:
+        return
+    
+    source_html = '<div class="source-container">'
+    for src in sources:
+        doc_name = src.get("document", "Document inconnu")
+        page = src.get("page", "N/A")
+        score = int(src.get("relevance_score", 0) * 100)
+        excerpt = src.get("excerpt", "")
+        
+        source_html += f"""
+        <div class="source-card">
+            <div style="margin-bottom: 0.5rem;">
+                <span class="source-tag">DOC</span>
+                <span style="font-weight: 600; color: #f8fafc;">{doc_name}</span>
+            </div>
+            <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 0.5rem;">
+                Page {page} • Pertinence {score}%
+            </div>
+            <div style="font-style: italic; font-size: 0.75rem; opacity: 0.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                "{excerpt}"
+            </div>
+        </div>
+        """
+    source_html += "</div>"
+    st.markdown(source_html, unsafe_allow_html=True)
 
 
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
@@ -776,7 +757,7 @@ with tab_chat:
                 st.markdown(
                     f"""
                 <div class="welcome-card">
-                    <div class="emoji"><span class="material-symbols-rounded" style="font-size: 2.5rem;">{emoji}</span></div>
+                    <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3.5rem;">{emoji}</span></div>
                     <div class="card-title">{title}</div>
                     <div class="card-desc">{prompt_text[:60]}...</div>
                 </div>
@@ -806,16 +787,7 @@ with tab_chat:
     for msg_idx, message in enumerate(conv["messages"]):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            if "sources" in message and message["sources"]:
-                with st.expander("📎 Sources consultées"):
-                    for src in message["sources"]:
-                        st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
-                        st.caption(f"_{src['excerpt']}_")
-                        score = src["relevance_score"]
-                        st.markdown(
-                            f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
-                            unsafe_allow_html=True,
-                        )
+            render_sources(message.get("sources", []))
             if "confidence" in message and message["confidence"] > 0:
                 st.markdown(
                     f'<span class="confidence-badge">🧠 Confiance: {int(message["confidence"] * 100)}%</span>',
@@ -932,15 +904,7 @@ with tab_chat:
                         )
 
                     if sources:
-                        with st.expander("📎 Sources consultées"):
-                            for src in sources:
-                                st.markdown(f"**{src['document']}** (Page {src['page'] or 'N/A'})")
-                                st.caption(f"_{src['excerpt']}_")
-                                score = src["relevance_score"]
-                                st.markdown(
-                                    f'<span class="confidence-badge">🎯 Pertinence: {int(score * 100)}%</span>',
-                                    unsafe_allow_html=True,
-                                )
+                        render_sources(sources)
 
                     conv["messages"].append(
                         {
@@ -1118,7 +1082,7 @@ with tab_infra:
         st.markdown(
             """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
-            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3rem;">architecture</span></div>
+            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3.5rem;">architecture</span></div>
             <div class="card-title">Uploadez votre schéma d'infrastructure</div>
             <div class="card-desc">
                 Diagramme réseau, architecture cloud, ou tout schéma technique.<br>
@@ -1202,21 +1166,24 @@ with tab_compliance:
                         report_md += f"## {reg}\n\n"
 
                         for qa in section["answers"]:
-                            with st.expander(f":material/help: {qa['question']}", expanded=False):
-                                st.markdown(qa["answer"])
-                                if qa["confidence"] > 0:
-                                    st.markdown(
-                                        f'<span class="confidence-badge">🧠 Confiance: {int(qa["confidence"] * 100)}%</span>',
-                                        unsafe_allow_html=True,
-                                    )
-                                if qa["sources"]:
-                                    st.caption(
-                                        "Sources: "
-                                        + ", ".join(
-                                            f"{s['document']} (p.{s.get('page', 'N/A')})"
-                                            for s in qa["sources"]
-                                        )
-                                    )
+                            confidence_html = ""
+                            if qa["confidence"] > 0:
+                                confidence_html = f'<div style="margin-top: 0.5rem;"><span class="confidence-badge">🧠 Confiance: {int(qa["confidence"] * 100)}%</span></div>'
+                            
+                            st.markdown(f"""
+                            <div class="dashboard-card">
+                                <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-rounded">help</span> {qa['question']}
+                                </div>
+                                <div style="font-size: 0.95rem; line-height: 1.6;">
+                                    {qa['answer']}
+                                </div>
+                                {confidence_html}
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            if qa["sources"]:
+                                render_sources(qa["sources"])
 
                             report_md += f"### {qa['question']}\n\n{qa['answer']}\n\n"
                             if qa["sources"]:
@@ -1255,7 +1222,7 @@ with tab_compliance:
         st.markdown(
             """
         <div class="welcome-card" style="max-width: 500px; margin: 2rem auto;">
-            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3rem;">policy</span></div>
+            <div class="emoji"><span class="material-symbols-rounded" style="font-size: 3.5rem;">policy</span></div>
             <div class="card-title">Rapport de Conformité</div>
             <div class="card-desc">
                 Sélectionnez les réglementations ci-dessus et cliquez sur "Générer".<br>
