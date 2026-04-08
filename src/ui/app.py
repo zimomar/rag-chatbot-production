@@ -57,6 +57,11 @@ SHARED_CSS = """
 
     #MainMenu, footer { visibility: hidden; }
 
+    /* Hide Streamlit's loading indicator (top right corner) */
+    [data-testid="stStatusWidget"] { display: none !important; }
+    .stApp > header + div[data-testid="stToolbar"] { display: none !important; }
+    button[kind="header"] { display: none !important; }
+
     .hero-section {
         padding: 3rem 1rem 2rem;
         animation: fadeIn 0.6s ease-out;
