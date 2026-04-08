@@ -178,7 +178,7 @@ SHARED_CSS = """
         padding: 0.5rem 1.5rem !important;
     }
 </style>
-""""""
+"""
 
 # --- Dark Theme CSS ---
 DARK_CSS = """
@@ -380,7 +380,7 @@ LIGHT_CSS = """
         box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
     }
 </style>
-""""""
+"""
 
 # Inject CSS
 st.markdown(SHARED_CSS, unsafe_allow_html=True)
