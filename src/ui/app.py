@@ -526,6 +526,40 @@ LIGHT_CSS = """
         color: #2563eb !important;
         border-bottom: 2px solid #3b82f6 !important;
     }
+
+    /* Force light colors for main content buttons and inputs */
+    .stApp .main .stButton > button,
+    .stApp .main button {
+        background: white !important;
+        color: #0f172a !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    .stApp .main .stButton > button:hover,
+    .stApp .main button:hover {
+        background: rgba(59, 130, 246, 0.05) !important;
+        border-color: rgba(59, 130, 246, 0.3) !important;
+    }
+
+    /* Fix text inputs and textareas */
+    .stApp .main input,
+    .stApp .main textarea {
+        background: white !important;
+        color: #0f172a !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Fix multiselect and other form elements */
+    .stApp .main [data-baseweb="select"],
+    .stApp .main [data-baseweb="input"] {
+        background: white !important;
+    }
+
+    /* Fix text color in main area */
+    .stApp .main p,
+    .stApp .main span,
+    .stApp .main label {
+        color: #1e293b !important;
+    }
 </style>
 """
 
