@@ -527,38 +527,62 @@ LIGHT_CSS = """
         border-bottom: 2px solid #3b82f6 !important;
     }
 
-    /* Force light colors for main content buttons and inputs */
-    .stApp .main .stButton > button,
-    .stApp .main button {
+    /* AGGRESSIVE: Force ALL buttons to light mode */
+    button[kind="primary"],
+    button[kind="secondary"],
+    button[data-testid],
+    .stButton button,
+    .stDownloadButton button,
+    .row-widget.stButton button,
+    button[class*="baseButton"] {
+        background-color: white !important;
         background: white !important;
         color: #0f172a !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    }
-    .stApp .main .stButton > button:hover,
-    .stApp .main button:hover {
-        background: rgba(59, 130, 246, 0.05) !important;
-        border-color: rgba(59, 130, 246, 0.3) !important;
+        border: 1px solid rgba(0, 0, 0, 0.15) !important;
     }
 
-    /* Fix text inputs and textareas */
-    .stApp .main input,
-    .stApp .main textarea {
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover,
+    .stButton button:hover {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%) !important;
+        border-color: rgba(59, 130, 246, 0.35) !important;
+    }
+
+    /* Force text inputs */
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    .stTextInput input,
+    .stTextArea textarea,
+    [data-baseweb="input"] input,
+    [data-baseweb="textarea"] textarea {
+        background-color: white !important;
         background: white !important;
         color: #0f172a !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
     }
 
-    /* Fix multiselect and other form elements */
-    .stApp .main [data-baseweb="select"],
-    .stApp .main [data-baseweb="input"] {
+    /* Chat input specific */
+    [data-testid="stChatInput"] input,
+    [data-testid="stChatInput"] textarea {
         background: white !important;
+        color: #0f172a !important;
     }
 
-    /* Fix text color in main area */
-    .stApp .main p,
-    .stApp .main span,
-    .stApp .main label {
+    /* Force all text colors */
+    .main p,
+    .main span:not(.material-symbols-rounded),
+    .main label,
+    .main div[data-testid="stMarkdownContainer"] {
         color: #1e293b !important;
+    }
+
+    /* Multiselect */
+    [data-baseweb="select"] {
+        background: white !important;
+    }
+    [data-baseweb="select"] span {
+        color: #0f172a !important;
     }
 </style>
 """
