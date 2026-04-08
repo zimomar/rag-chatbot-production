@@ -419,17 +419,16 @@ def format_audit_report(text: str) -> str:
                 
                 badge_html = f'<span class="status-pill {pill_class}">{p_val.upper()}</span>'
 
-            formatted_report += f"""
-            <div class="dashboard-card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    <h4 style="margin: 0; font-size: 1.1rem; color: #f8fafc;">{title}</h4>
-                    {badge_html}
-                </div>
-                <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
-                    {body}
-                </div>
-            </div>
-            """
+            formatted_report += f"""<div class="dashboard-card">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+<h4 style="margin: 0; font-size: 1.1rem; color: #f8fafc;">{title}</h4>
+{badge_html}
+</div>
+<div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+{body}
+</div>
+</div>
+"""
 
         return formatted_report
     except Exception as e:
