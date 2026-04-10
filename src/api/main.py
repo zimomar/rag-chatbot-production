@@ -386,6 +386,255 @@ class InfraAnalysisResponse(BaseModel):
     confidence: float
 
 
+class GraphNodeModel(BaseModel):
+    """Modèle de nœud dans le graphe d'infrastructure."""
+
+    id: str
+    name: str
+    type: str
+    controls: list[str]
+
+
+class GraphEdgeModel(BaseModel):
+    """Modèle d'arête dans le graphe d'infrastructure."""
+
+    from_: str
+    to: str
+    protocol: str
+
+    class Config:
+        fields = {"from_": "from"}
+
+
+class ComplianceScoreModel(BaseModel):
+    """Scores de conformité par réglementation pour un nœud."""
+
+    NIS2: float
+    DORA: float
+    RGPD: float
+    AI_Act: float
+    CRA: float
+
+
+class GraphAnalysisResponse(BaseModel):
+    """Réponse d'analyse de graphe d'infrastructure."""
+
+    success: bool
+    nodes: list[GraphNodeModel]
+    edges: list[GraphEdgeModel]
+    compliance_scores_by_node: dict[str, ComplianceScoreModel]
+    error: str | None = None
+
+
+@app.post("/analyze-infrastructure-graph", response_model=GraphAnalysisResponse)
+async def analyze_infrastructure_graph(
+    file: UploadFile = File(...),
+) -> GraphAnalysisResponse:
+    """
+    Extrait la topologie d'infrastructure d'un DAT et calcule les scores de conformité par nœud.
+    Retourne un graphe JSON avec nodes, edges et compliance scores.
+    """
+    try:
+        content = await file.read()
+        filename = (file.filename or "").lower()
+
+        # 1. Extract text from document
+        if filename.endswith((".docx", ".pdf")):
+            doc = loader.load_uploaded_file(content, filename)
+            document_text = doc.content
+            logger.info(f"Extracted DAT document: {len(document_text)} chars")
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail="Format non supporté. Utilisez .docx ou .pdf pour les DATs.",
+            )
+
+        # 2. Extract architecture graph
+        graph_result = await agent.extract_architecture_graph(document_text)
+
+        if not graph_result["success"]:
+            return GraphAnalysisResponse(
+                success=False,
+                nodes=[],
+                edges=[],
+                compliance_scores_by_node={},
+                error=graph_result.get("error", "Échec de l'extraction du graphe"),
+            )
+
+        # 3. Calculate compliance scores per node
+        # For now, we'll use a simplified scoring based on detected controls
+        compliance_scores = {}
+
+        for node in graph_result["nodes"]:
+            node_id = node["id"]
+            controls = set(node.get("controls", []))
+
+            # Score calculation logic (0-100%)
+            # This is a simplified version - in production, would use RAG to analyze each node
+            scores = {
+                "NIS2": _calculate_nis2_score(node, controls),
+                "DORA": _calculate_dora_score(node, controls),
+                "RGPD": _calculate_rgpd_score(node, controls),
+                "AI_Act": _calculate_ai_act_score(node, controls),
+                "CRA": _calculate_cra_score(node, controls),
+            }
+
+            compliance_scores[node_id] = ComplianceScoreModel(**scores)
+
+        # 4. Format response
+        nodes = [GraphNodeModel(**node) for node in graph_result["nodes"]]
+        edges = [
+            GraphEdgeModel(from_=edge["from"], to=edge["to"], protocol=edge.get("protocol", "unknown"))
+            for edge in graph_result["edges"]
+        ]
+
+        return GraphAnalysisResponse(
+            success=True,
+            nodes=nodes,
+            edges=edges,
+            compliance_scores_by_node=compliance_scores,
+            error=None,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erreur analyse graphe infrastructure: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:
+    """Calcule le score NIS2 basé sur les contrôles de cybersécurité."""
+    score = 0.0
+    max_score = 5.0
+
+    # Encryption/TLS
+    if any(c in controls for c in ["TLS", "encryption", "TLS 1.3", "AES-256"]):
+        score += 1.0
+
+    # Monitoring/logging
+    if any(c in controls for c in ["logging", "monitoring", "SIEM"]):
+        score += 1.0
+
+    # Incident response
+    if any(c in controls for c in ["incident_response", "24h_notification"]):
+        score += 1.0
+
+    # Backup/disaster recovery
+    if any(c in controls for c in ["backup", "disaster_recovery", "DR"]):
+        score += 1.0
+
+    # Network security
+    if any(c in controls for c in ["firewall", "IDS", "IPS", "WAF"]):
+        score += 1.0
+
+    return (score / max_score) * 100
+
+
+def _calculate_dora_score(node: dict[str, Any], controls: set[str]) -> float:
+    """Calcule le score DORA basé sur la résilience opérationnelle."""
+    score = 0.0
+    max_score = 4.0
+
+    # ICT resilience testing
+    if any(c in controls for c in ["resilience_testing", "chaos_testing"]):
+        score += 1.0
+
+    # Third-party risk management
+    if any(c in controls for c in ["vendor_management", "third_party_audit"]):
+        score += 1.0
+
+    # Continuity/backup
+    if any(c in controls for c in ["backup", "continuity", "failover"]):
+        score += 1.0
+
+    # Incident management
+    if any(c in controls for c in ["incident_management", "incident_response"]):
+        score += 1.0
+
+    return (score / max_score) * 100
+
+
+def _calculate_rgpd_score(node: dict[str, Any], controls: set[str]) -> float:
+    """Calcule le score RGPD basé sur la protection des données."""
+    score = 0.0
+    max_score = 5.0
+
+    # Encryption
+    if any(c in controls for c in ["encryption", "TLS", "AES-256"]):
+        score += 1.0
+
+    # Access control/IAM
+    if any(c in controls for c in ["IAM", "MFA", "SSO", "access_control", "RBAC"]):
+        score += 1.0
+
+    # Data minimization/pseudonymization
+    if any(c in controls for c in ["pseudonymization", "anonymization", "data_minimization"]):
+        score += 1.0
+
+    # DPO/privacy by design
+    if any(c in controls for c in ["DPO", "privacy_by_design", "DPIA"]):
+        score += 1.0
+
+    # Audit logs
+    if any(c in controls for c in ["audit_logs", "logging"]):
+        score += 1.0
+
+    return (score / max_score) * 100
+
+
+def _calculate_ai_act_score(node: dict[str, Any], controls: set[str]) -> float:
+    """Calcule le score AI Act basé sur la gouvernance IA."""
+    node_type = node.get("type", "").lower()
+
+    # Only applicable to AI-related components
+    if node_type not in ["api", "service"] or "ai" not in node.get("name", "").lower():
+        return 100.0  # Not applicable = 100%
+
+    score = 0.0
+    max_score = 4.0
+
+    # Documentation/transparency
+    if any(c in controls for c in ["documentation", "model_card", "transparency"]):
+        score += 1.0
+
+    # Bias monitoring
+    if any(c in controls for c in ["bias_monitoring", "fairness_testing", "SHAP"]):
+        score += 1.0
+
+    # Human oversight
+    if any(c in controls for c in ["human_oversight", "human_in_loop"]):
+        score += 1.0
+
+    # Data governance
+    if any(c in controls for c in ["data_governance", "data_quality", "lineage"]):
+        score += 1.0
+
+    return (score / max_score) * 100
+
+
+def _calculate_cra_score(node: dict[str, Any], controls: set[str]) -> float:
+    """Calcule le score CRA basé sur la sécurité des produits numériques."""
+    # CRA applies to products put on the market, not internal infrastructure
+    # For simplicity, we'll check for security controls
+    score = 0.0
+    max_score = 3.0
+
+    # Vulnerability management
+    if any(c in controls for c in ["vulnerability_scanning", "patch_management", "CVE_monitoring"]):
+        score += 1.0
+
+    # Secure development
+    if any(c in controls for c in ["SAST", "DAST", "secure_SDLC"]):
+        score += 1.0
+
+    # SBOM/supply chain
+    if any(c in controls for c in ["SBOM", "supply_chain_security", "dependency_scanning"]):
+        score += 1.0
+
+    return (score / max_score) * 100
+
+
 @app.post("/analyze-infrastructure", response_model=InfraAnalysisResponse)
 async def analyze_infrastructure(
     file: UploadFile = File(...),

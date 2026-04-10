@@ -472,6 +472,139 @@ class RAGAgent:
             logger.error(f"Erreur lors du generate_direct: {e}")
             raise
 
+    async def extract_architecture_graph(self, dat_document: str) -> dict[str, Any]:
+        """
+        Extrait la topologie d'infrastructure d'un document DAT sous forme de graphe.
+
+        Args:
+            dat_document: Contenu du document DAT
+
+        Returns:
+            Dict avec structure:
+            {
+                "success": bool,
+                "nodes": [{"id": str, "name": str, "type": str, "controls": list[str]}],
+                "edges": [{"from": str, "to": str, "protocol": str}],
+                "error": str (optionnel si success=False)
+            }
+        """
+        import json as json_lib
+
+        system_prompt = (
+            "Tu es un expert en architecture technique. Ton rôle est d'analyser des documents "
+            "d'architecture technique (DAT) et d'extraire la topologie sous forme de graphe JSON.\n\n"
+            "RÈGLES STRICTES:\n"
+            "1. Retourne UNIQUEMENT un JSON valide, sans texte avant ou après\n"
+            "2. Structure: {\"nodes\": [...], \"edges\": [...]}\n"
+            "3. Chaque node: {\"id\": \"unique_id\", \"name\": \"nom\", \"type\": \"type\", \"controls\": [\"control1\", ...]}\n"
+            "4. Chaque edge: {\"from\": \"node_id\", \"to\": \"node_id\", \"protocol\": \"protocol_name\"}\n"
+            "5. Types valides: database, api, service, frontend, auth, storage, network, firewall, load_balancer, other\n"
+            "6. Identifie les contrôles de sécurité présents (TLS, encryption, backup, MFA, etc.)\n"
+            "7. Si aucune architecture n'est détectée, retourne {\"nodes\": [], \"edges\": []}"
+        )
+
+        extraction_prompt = (
+            f"Analyse ce document DAT et extrais l'architecture:\n\n"
+            f"```\n{dat_document[:15000]}\n```\n\n"
+            f"Retourne le JSON du graphe d'infrastructure."
+        )
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[Graph Extract] Attempt {attempt + 1}/{max_retries}")
+
+                response = httpx.post(
+                    f"{self.base_url}/api/chat",
+                    json={
+                        "model": settings.ollama_model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": extraction_prompt},
+                        ],
+                        "stream": False,
+                        "options": {
+                            "temperature": 0.0,  # Déterministe pour extraction
+                            "num_predict": 2000,
+                            "num_ctx": 8192,
+                        },
+                    },
+                    timeout=settings.ollama_timeout,
+                )
+
+                if response.status_code != 200:
+                    raise Exception(f"Erreur Ollama: {response.status_code}")
+
+                result = response.json()
+                answer = result.get("message", {}).get("content", "")
+
+                # Extraction du JSON (peut être entouré de ```json ou autre texte)
+                json_str = answer.strip()
+                if "```json" in json_str:
+                    json_str = json_str.split("```json")[1].split("```")[0].strip()
+                elif "```" in json_str:
+                    json_str = json_str.split("```")[1].split("```")[0].strip()
+
+                # Parsing et validation
+                graph_data = json_lib.loads(json_str)
+
+                # Validation du schéma
+                if not isinstance(graph_data.get("nodes"), list):
+                    raise ValueError("'nodes' doit être une liste")
+                if not isinstance(graph_data.get("edges"), list):
+                    raise ValueError("'edges' doit être une liste")
+
+                # Validation des nodes
+                for node in graph_data["nodes"]:
+                    if not all(k in node for k in ["id", "name", "type"]):
+                        raise ValueError(f"Node invalide: {node}")
+                    if "controls" not in node:
+                        node["controls"] = []
+
+                # Validation des edges
+                for edge in graph_data["edges"]:
+                    if not all(k in edge for k in ["from", "to"]):
+                        raise ValueError(f"Edge invalide: {edge}")
+                    if "protocol" not in edge:
+                        edge["protocol"] = "unknown"
+
+                logger.info(
+                    f"[Graph Extract] Success: {len(graph_data['nodes'])} nodes, {len(graph_data['edges'])} edges"
+                )
+
+                return {
+                    "success": True,
+                    "nodes": graph_data["nodes"],
+                    "edges": graph_data["edges"],
+                }
+
+            except json_lib.JSONDecodeError as e:
+                logger.warning(f"[Graph Extract] JSON parse error (attempt {attempt + 1}): {e}")
+                if attempt == max_retries - 1:
+                    return {
+                        "success": False,
+                        "nodes": [],
+                        "edges": [],
+                        "error": f"Échec du parsing JSON après {max_retries} tentatives",
+                    }
+            except Exception as e:
+                logger.error(f"[Graph Extract] Error (attempt {attempt + 1}): {e}")
+                if attempt == max_retries - 1:
+                    return {
+                        "success": False,
+                        "nodes": [],
+                        "edges": [],
+                        "error": str(e),
+                    }
+
+        # Fallback (ne devrait jamais arriver)
+        return {
+            "success": False,
+            "nodes": [],
+            "edges": [],
+            "error": "Nombre maximum de tentatives atteint",
+        }
+
     async def analyze_dat_with_rag_extraction(
         self,
         full_document: str,
