@@ -10,7 +10,26 @@
       "Bash(produits numériques sur le marché. Cette qualification juridique)",
       "Bash(nécessite une analyse contractuelle et commerciale hors périmètre)",
       "Bash(du document technique.\"\n  * Non applicable → Pure internal infrastructure\n\nKey principle: Express uncertainty clearly rather than masking it\nwith tags or binary conclusions. \"Indéterminé\" is professionally\ndefensible; \"priority low, no gaps\" on unresolved legal questions is not.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(des éléments conformes, la priorité DOIT être Basse, pas Moyenne.\"\n\nExpected outcome: RGPD with zero gaps will now show \"Priorité: Basse\"\ninstead of \"Moyenne\", maintaining report coherence.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(des éléments conformes, la priorité DOIT être Basse, pas Moyenne.\"\n\nExpected outcome: RGPD with zero gaps will now show \"Priorité: Basse\"\ninstead of \"Moyenne\", maintaining report coherence.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(ssh -o ConnectTimeout=5 root@178.104.106.94 'cd /app/repo && git pull && docker compose down && docker compose up -d --build && sleep 5 && docker compose ps')",
+      "Bash(curl:*)",
+      "Bash(ssh root@178.104.106.94 'cd /app/repo && git pull && docker compose restart ui && sleep 3 && docker compose ps ui')",
+      "WebFetch(domain:178.104.106.94)",
+      "Bash(powershell.exe -Command \"Start-Process ''http://178.104.106.94:8501/''\")",
+      "Bash(ssh root@178.104.106.94 'cd /app/repo && docker compose down ui && docker compose up -d --build ui && sleep 5 && docker compose ps ui')",
+      "Bash(powershell.exe -Command \"\nAdd-Type -AssemblyName System.Windows.Forms\nStart-Sleep -Milliseconds 500\n[System.Windows.Forms.SendKeys]::SendWait\\(''^{F5}''\\)\n\")",
+      "Bash(ssh root@178.104.106.94 'cd /app/repo && grep -A 5 \"\"DARK_CSS.*=.*\\\\\"\"\\\\\"\"\\\\\"\"\"\" src/ui/app.py | head -10')",
+      "Bash(ssh root@178.104.106.94 'docker exec rag-ui rm -rf /home/appuser/.streamlit/cache 2>/dev/null; docker compose restart ui && sleep 4 && docker compose ps ui')",
+      "Bash(ssh root@178.104.106.94 'cd /app/repo && docker compose restart ui')",
+      "Bash(ssh root@178.104.106.94:*)",
+      "Bash(powershell.exe -Command \"\nGet-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force\nStart-Sleep -Seconds 1\nStart-Process chrome -ArgumentList ''http://178.104.106.94:8501/''\n\")",
+      "Bash(powershell.exe -Command \"\nGet-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force\nStart-Sleep -Seconds 2\nStart-Process chrome -ArgumentList ''http://178.104.106.94:8501/''\n\")",
+      "Bash([ -f DESIGN.md ])",
+      "Bash(start https://www.youtube.com/watch?v=IACHfKmZMr8)",
+      "Bash(start https://www.youtube.com/watch?v=rP7bpYsfa6Q)",
+      "Bash(start https://paulgraham.com/genius.html)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
