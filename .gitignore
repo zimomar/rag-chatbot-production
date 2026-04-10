@@ -240,8 +240,45 @@ data/
 !terraform.tfvars.example
 .terraform.lock.hcl
 
-# Test fixtures
- that may contain sensitive data
+# Test fixtures that may contain sensitive data
 tests/fixtures/*.pdf
 tests/fixtures/*.md
 !tests/fixtures/.gitkeep
+
+# =============================================================================
+# Next.js Frontend
+# =============================================================================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Production
+frontend/build
+
+# Misc
+frontend/.DS_Store
+frontend/*.pem
+
+# Debug
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Local env files
+frontend/.env*.local
+
+# Vercel
+frontend/.vercel
+
+# TypeScript
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts

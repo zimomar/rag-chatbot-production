@@ -68,6 +68,29 @@ services:
           memory: 1G
 
   # ---------------------------------------------------------------------------
+  # Frontend (Next.js Graph Visualization)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://api:8000
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - rag-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ---------------------------------------------------------------------------
   # ChromaDB - Vector Store
   # ---------------------------------------------------------------------------
   chromadb:
