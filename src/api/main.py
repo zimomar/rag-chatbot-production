@@ -582,23 +582,66 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
         # Extract controls from the chunks
         controls = set()
         control_keywords = {
-            "TLS", "SSL", "encryption", "AES-256", "TLS 1.3",
-            "logging", "monitoring", "SIEM", "audit",
-            "incident_response", "24h_notification",
-            "backup", "disaster_recovery", "DR", "continuity", "failover",
-            "firewall", "IDS", "IPS", "WAF",
-            "MFA", "SSO", "IAM", "RBAC", "access_control",
-            "pseudonymization", "anonymization", "data_minimization",
-            "DPO", "privacy_by_design", "DPIA",
-            "vulnerability_scanning", "patch_management", "CVE_monitoring",
-            "SAST", "DAST", "secure_SDLC",
-            "SBOM", "supply_chain_security", "dependency_scanning",
-            "resilience_testing", "chaos_testing",
-            "vendor_management", "third_party_audit",
-            "documentation", "model_card", "transparency",
-            "bias_monitoring", "fairness_testing", "SHAP",
-            "human_oversight", "human_in_loop",
-            "data_governance", "data_quality", "lineage"
+            # Encryption/TLS
+            "TLS", "SSL", "encryption", "chiffrement", "AES-256", "TLS 1.3",
+            # Monitoring
+            "logging", "monitoring", "journalisation", "surveillance", "SIEM", "audit",
+            # Incident
+            "incident_response", "gestion incidents", "24h_notification",
+            # Backup/DR
+            "backup", "sauvegarde", "disaster_recovery", "DR", "continuity", "continuité", "failover",
+            # Network security
+            "firewall", "pare-feu", "IDS", "IPS", "WAF",
+            # Access control
+            "MFA", "SSO", "IAM", "RBAC", "access_control", "contrôle accès", "authentification",
+            # RGPD
+            "pseudonymization", "pseudonymisation", "anonymization", "anonymisation", "data_minimization", "minimisation",
+            "DPO", "privacy_by_design", "DPIA", "PIA",
+            # Vulnerability/CRA
+            "vulnerability_scanning", "scan vulnérabilités", "vulnérabilité", "patch_management",
+            "gestion correctifs", "CVE_monitoring", "CVE",
+            "SAST", "DAST", "secure_SDLC", "SDLC sécurisé",
+            "SBOM", "supply_chain_security", "sécurité chaîne approvisionnement",
+            "dependency_scanning", "scan dépendances",
+            # DORA
+            "resilience_testing", "test résilience", "chaos_testing",
+            "vendor_management", "gestion fournisseurs", "third_party_audit", "audit tiers",
+            # AI Act
+            "documentation", "model_card", "transparency", "transparence",
+            "bias_monitoring", "biais", "fairness_testing", "équité", "SHAP",
+            "human_oversight", "supervision humaine", "human_in_loop",
+            "data_governance", "gouvernance données", "data_quality", "qualité données", "lineage"
+        }
+
+        # Mapping FR → EN canonical names
+        keyword_mapping = {
+            "chiffrement": "encryption",
+            "journalisation": "logging",
+            "surveillance": "monitoring",
+            "gestion incidents": "incident_response",
+            "sauvegarde": "backup",
+            "continuité": "continuity",
+            "pare-feu": "firewall",
+            "contrôle accès": "access_control",
+            "authentification": "MFA",
+            "pseudonymisation": "pseudonymization",
+            "anonymisation": "anonymization",
+            "minimisation": "data_minimization",
+            "vulnérabilité": "vulnerability_scanning",
+            "scan vulnérabilités": "vulnerability_scanning",
+            "gestion correctifs": "patch_management",
+            "SDLC sécurisé": "secure_SDLC",
+            "sécurité chaîne approvisionnement": "supply_chain_security",
+            "scan dépendances": "dependency_scanning",
+            "test résilience": "resilience_testing",
+            "gestion fournisseurs": "vendor_management",
+            "audit tiers": "third_party_audit",
+            "transparence": "transparency",
+            "biais": "bias_monitoring",
+            "équité": "fairness_testing",
+            "supervision humaine": "human_oversight",
+            "gouvernance données": "data_governance",
+            "qualité données": "data_quality",
         }
 
         # Scan chunks for control keywords
@@ -606,7 +649,9 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             content_lower = result.content.lower()
             for keyword in control_keywords:
                 if keyword.lower() in content_lower:
-                    controls.add(keyword)
+                    # Use canonical English name
+                    canonical = keyword_mapping.get(keyword, keyword)
+                    controls.add(canonical)
 
         logger.info(f"RAG extracted {len(controls)} controls for node {node_name}: {controls}")
         return controls
