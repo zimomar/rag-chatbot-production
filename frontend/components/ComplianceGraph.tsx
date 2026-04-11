@@ -87,6 +87,15 @@ export function ComplianceGraph({
         protocol: edge.protocol,
       }));
 
+    console.log("Graph Debug:", {
+      totalNodes: nodes.length,
+      totalEdges: graphData.edges.length,
+      filteredLinks: links.length,
+      nodeIds: Array.from(nodeIds),
+      edges: graphData.edges,
+      links: links,
+    });
+
     return { filteredNodes: nodes, filteredLinks: links };
   }, [graphData, selectedRegulations]);
 
@@ -137,11 +146,11 @@ export function ComplianceGraph({
             ctx.fillStyle = "#e2e8f0";
             ctx.fillText(label, node.x, node.y + 20);
           }}
-          linkColor={() => "#475569"}
-          linkWidth={2}
-          linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={2}
-          linkDirectionalParticleSpeed={0.005}
+          linkColor={() => "#60a5fa"}
+          linkWidth={3}
+          linkDirectionalParticles={4}
+          linkDirectionalParticleWidth={3}
+          linkDirectionalParticleSpeed={0.008}
           linkLabel={(link: any) => link.protocol}
           onNodeClick={handleNodeClick}
           cooldownTicks={100}
