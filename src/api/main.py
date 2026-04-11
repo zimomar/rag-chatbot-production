@@ -7,6 +7,7 @@ import logging
 from collections.abc import AsyncGenerator
 from datetime import UTC
 from typing import Any
+from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -473,23 +474,14 @@ async def analyze_infrastructure_graph(
                 error=graph_result.get("error", "Échec de l'extraction du graphe"),
             )
 
-        # 3. Calculate compliance scores per node
-        # For now, we'll use a simplified scoring based on detected controls
+        # 3. Calculate compliance scores per node using RAG-based analysis
         compliance_scores = {}
 
         for node in graph_result["nodes"]:
             node_id = node["id"]
-            controls = set(node.get("controls", []))
 
-            # Score calculation logic (0-100%)
-            # This is a simplified version - in production, would use RAG to analyze each node
-            scores = {
-                "NIS2": _calculate_nis2_score(node, controls),
-                "DORA": _calculate_dora_score(node, controls),
-                "RGPD": _calculate_rgpd_score(node, controls),
-                "AI_Act": _calculate_ai_act_score(node, controls),
-                "CRA": _calculate_cra_score(node, controls),
-            }
+            # Use RAG to extract node-specific controls from the DAT and calculate scores
+            scores = _analyze_node_compliance(node, document_text)
 
             compliance_scores[node_id] = ComplianceScoreModel(**scores)
 
@@ -513,6 +505,171 @@ async def analyze_infrastructure_graph(
     except Exception as e:
         logger.error(f"Erreur analyse graphe infrastructure: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+def _filter_applicable_regulations(node: dict[str, Any]) -> dict[str, bool]:
+    """
+    Détermine quelles réglementations s'appliquent à un nœud donné.
+
+    Args:
+        node: Nœud du graphe avec type et nom
+
+    Returns:
+        Dictionnaire {regulation: is_applicable}
+    """
+    node_type = node.get("type", "").lower()
+    node_name = node.get("name", "").lower()
+
+    # AI Act: only for AI/ML systems
+    ai_keywords = ["ai", "ml", "model", "prediction", "machine learning", "neural", "intelligence"]
+    is_ai_system = any(kw in node_type for kw in ai_keywords) or any(kw in node_name for kw in ai_keywords)
+
+    # DORA: only for financial/critical operational systems
+    dora_types = ["database", "api", "service", "payment", "transaction", "banking"]
+    is_dora_applicable = any(t in node_type for t in dora_types)
+
+    # RGPD: if handles personal data (check for common patterns)
+    rgpd_keywords = ["user", "customer", "personal", "auth", "identity", "profile", "account"]
+    handles_personal_data = any(kw in node_type for kw in rgpd_keywords) or any(kw in node_name for kw in rgpd_keywords)
+
+    # NIS2 and CRA: apply to all
+    return {
+        "NIS2": True,
+        "DORA": is_dora_applicable,
+        "RGPD": handles_personal_data,
+        "AI_Act": is_ai_system,
+        "CRA": True,
+    }
+
+
+def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[str]:
+    """
+    Utilise RAG pour extraire les contrôles de sécurité spécifiques à un nœud depuis le DAT.
+
+    Args:
+        node: Nœud du graphe
+        document_text: Contenu complet du DAT
+
+    Returns:
+        Ensemble des contrôles détectés pour ce nœud
+    """
+    node_name = node.get("name", "")
+    node_type = node.get("type", "")
+
+    # Create temporary chunks and index
+    temp_chunker = Chunker()
+    temp_embedder = Embedder()
+    temp_store = VectorStore(collection_name=f"temp_node_{uuid4().hex[:8]}")
+
+    try:
+        # Create a temporary document
+        from src.ingestion.loader import Document
+        temp_doc = Document(content=document_text, source=f"dat_{node_name}")
+
+        # Chunk and embed
+        chunks = temp_chunker.split(temp_doc)
+        embedded_chunks = temp_embedder.embed_chunks(chunks)
+        temp_store.add_documents(embedded_chunks)
+
+        # Search for node-specific security information
+        search_query = f"{node_name} {node_type} security controls encryption authentication monitoring backup access control"
+        results = temp_store.search_by_text(
+            query_text=search_query,
+            embedder=temp_embedder,
+            top_k=3
+        )
+
+        # Extract controls from the chunks
+        controls = set()
+        control_keywords = {
+            "TLS", "SSL", "encryption", "AES-256", "TLS 1.3",
+            "logging", "monitoring", "SIEM", "audit",
+            "incident_response", "24h_notification",
+            "backup", "disaster_recovery", "DR", "continuity", "failover",
+            "firewall", "IDS", "IPS", "WAF",
+            "MFA", "SSO", "IAM", "RBAC", "access_control",
+            "pseudonymization", "anonymization", "data_minimization",
+            "DPO", "privacy_by_design", "DPIA",
+            "vulnerability_scanning", "patch_management", "CVE_monitoring",
+            "SAST", "DAST", "secure_SDLC",
+            "SBOM", "supply_chain_security", "dependency_scanning",
+            "resilience_testing", "chaos_testing",
+            "vendor_management", "third_party_audit",
+            "documentation", "model_card", "transparency",
+            "bias_monitoring", "fairness_testing", "SHAP",
+            "human_oversight", "human_in_loop",
+            "data_governance", "data_quality", "lineage"
+        }
+
+        # Scan chunks for control keywords
+        for result in results:
+            content_lower = result.content.lower()
+            for keyword in control_keywords:
+                if keyword.lower() in content_lower:
+                    controls.add(keyword)
+
+        logger.info(f"RAG extracted {len(controls)} controls for node {node_name}: {controls}")
+        return controls
+
+    except Exception as e:
+        logger.error(f"Error in RAG control extraction for node {node_name}: {e}")
+        # Fallback to existing controls from LLM extraction
+        return set(node.get("controls", []))
+    finally:
+        # Cleanup temporary collection
+        try:
+            temp_store.client.delete_collection(temp_store.collection_name)
+        except Exception:
+            pass
+
+
+def _analyze_node_compliance(node: dict[str, Any], document_text: str) -> dict[str, float]:
+    """
+    Analyse la conformité d'un nœud via RAG sur le DAT document.
+
+    Args:
+        node: Nœud du graphe
+        document_text: Contenu complet du DAT
+
+    Returns:
+        Dictionnaire des scores par réglementation
+    """
+    # Extract controls specific to this node using RAG
+    controls = _extract_controls_from_rag(node, document_text)
+
+    # Determine applicable regulations
+    applicable_regs = _filter_applicable_regulations(node)
+
+    # Calculate scores based on extracted controls
+    scores = {}
+
+    if applicable_regs["NIS2"]:
+        scores["NIS2"] = _calculate_nis2_score(node, controls)
+    else:
+        scores["NIS2"] = 100.0  # N/A = 100%
+
+    if applicable_regs["DORA"]:
+        scores["DORA"] = _calculate_dora_score(node, controls)
+    else:
+        scores["DORA"] = 100.0
+
+    if applicable_regs["RGPD"]:
+        scores["RGPD"] = _calculate_rgpd_score(node, controls)
+    else:
+        scores["RGPD"] = 100.0
+
+    if applicable_regs["AI_Act"]:
+        scores["AI_Act"] = _calculate_ai_act_score(node, controls)
+    else:
+        scores["AI_Act"] = 100.0
+
+    if applicable_regs["CRA"]:
+        scores["CRA"] = _calculate_cra_score(node, controls)
+    else:
+        scores["CRA"] = 100.0
+
+    logger.info(f"Node {node.get('name')} compliance scores: {scores}")
+    return scores
 
 
 def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:

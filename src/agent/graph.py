@@ -499,7 +499,9 @@ class RAGAgent:
             "3. Chaque node: {\"id\": \"unique_id\", \"name\": \"nom\", \"type\": \"type\", \"controls\": [\"control1\", ...]}\n"
             "4. Chaque edge: {\"from\": \"node_id\", \"to\": \"node_id\", \"protocol\": \"protocol_name\"}\n"
             "5. Types valides: database, api, service, frontend, auth, storage, network, firewall, load_balancer, other\n"
-            "6. Identifie les contrôles de sécurité présents (TLS, encryption, backup, MFA, etc.)\n"
+            "6. Pour chaque node, liste TOUS les contrôles de sécurité trouvés dans le document "
+            "(authentication, encryption, monitoring, backup, access control, logging, MFA, TLS, "
+            "firewall, IDS/IPS, SIEM, disaster recovery, incident response, vulnerability scanning, etc.)\n"
             "7. Si aucune architecture n'est détectée, retourne {\"nodes\": [], \"edges\": []}"
         )
 
@@ -525,7 +527,7 @@ class RAGAgent:
                         "stream": False,
                         "options": {
                             "temperature": 0.0,  # Déterministe pour extraction
-                            "num_predict": 2000,
+                            "num_predict": 3000,  # Increased to extract more controls
                             "num_ctx": 8192,
                         },
                     },
