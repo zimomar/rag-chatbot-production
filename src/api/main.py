@@ -529,7 +529,7 @@ def _filter_applicable_regulations(node: dict[str, Any]) -> dict[str, bool]:
     is_dora_applicable = any(t in node_type for t in dora_types)
 
     # RGPD: if handles personal data (check for common patterns)
-    rgpd_keywords = ["user", "customer", "personal", "auth", "identity", "profile", "account"]
+    rgpd_keywords = ["user", "customer", "personal", "auth", "identity", "profile", "account", "payment", "transaction", "banking"]
     handles_personal_data = any(kw in node_type for kw in rgpd_keywords) or any(kw in node_name for kw in rgpd_keywords)
 
     # NIS2 and CRA: apply to all
@@ -583,7 +583,7 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
         controls = set()
         control_keywords = {
             # Encryption/TLS
-            "TLS", "SSL", "encryption", "chiffrement", "AES-256", "TLS 1.3",
+            "TLS", "mTLS", "SSL", "encryption", "chiffrement", "AES-256", "TLS 1.3",
             # Monitoring
             "logging", "monitoring", "journalisation", "surveillance", "SIEM", "audit",
             # Incident
@@ -593,7 +593,7 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             # Network security
             "firewall", "pare-feu", "IDS", "IPS", "WAF",
             # Access control
-            "MFA", "SSO", "IAM", "RBAC", "access_control", "contrôle accès", "authentification",
+            "MFA", "SSO", "IAM", "RBAC", "access_control", "contrôle accès", "authentification", "authentication",
             # RGPD
             "pseudonymization", "pseudonymisation", "anonymization", "anonymisation", "data_minimization", "minimisation",
             "DPO", "privacy_by_design", "DPIA", "PIA",
@@ -623,7 +623,7 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             "continuité": "continuity",
             "pare-feu": "firewall",
             "contrôle accès": "access_control",
-            "authentification": "MFA",
+            "authentification": "authentication",
             "pseudonymisation": "pseudonymization",
             "anonymisation": "anonymization",
             "minimisation": "data_minimization",
@@ -723,7 +723,7 @@ def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:
     max_score = 5.0
 
     # Encryption/TLS
-    if any(c in controls for c in ["TLS", "encryption", "TLS 1.3", "AES-256"]):
+    if any(c in controls for c in ["TLS", "mTLS", "encryption", "TLS 1.3", "AES-256", "SSL"]):
         score += 1.0
 
     # Monitoring/logging
@@ -775,11 +775,11 @@ def _calculate_rgpd_score(node: dict[str, Any], controls: set[str]) -> float:
     max_score = 5.0
 
     # Encryption
-    if any(c in controls for c in ["encryption", "TLS", "AES-256"]):
+    if any(c in controls for c in ["encryption", "TLS", "mTLS", "AES-256", "SSL"]):
         score += 1.0
 
     # Access control/IAM
-    if any(c in controls for c in ["IAM", "MFA", "SSO", "access_control", "RBAC"]):
+    if any(c in controls for c in ["IAM", "MFA", "SSO", "access_control", "RBAC", "authentication"]):
         score += 1.0
 
     # Data minimization/pseudonymization
@@ -799,12 +799,6 @@ def _calculate_rgpd_score(node: dict[str, Any], controls: set[str]) -> float:
 
 def _calculate_ai_act_score(node: dict[str, Any], controls: set[str]) -> float:
     """Calcule le score AI Act basé sur la gouvernance IA."""
-    node_type = node.get("type", "").lower()
-
-    # Only applicable to AI-related components
-    if node_type not in ["api", "service"] or "ai" not in node.get("name", "").lower():
-        return 100.0  # Not applicable = 100%
-
     score = 0.0
     max_score = 4.0
 
