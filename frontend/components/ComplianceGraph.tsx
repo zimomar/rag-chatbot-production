@@ -80,9 +80,9 @@ export function ComplianceGraph({
 
     const nodeIds = new Set(nodes.map((n) => n.id));
     const links = graphData.edges
-      .filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to))
+      .filter((edge) => nodeIds.has(edge.from_) && nodeIds.has(edge.to))
       .map((edge) => ({
-        source: edge.from,
+        source: edge.from_,
         target: edge.to,
         protocol: edge.protocol,
       }));
