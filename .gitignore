@@ -17,6 +17,9 @@ eggs/
 lib/
 lib64/
 parts/
+
+# Exception: Allow frontend/lib (Next.js utils)
+!frontend/lib/
 sdist/
 var/
 wheels/
