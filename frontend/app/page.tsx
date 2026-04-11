@@ -48,11 +48,23 @@ export default function Home() {
     const formData = new FormData();
     formData.append("file", file);
 
+    // Use direct backend URL to avoid Next.js proxy timeout
+    const apiUrl = typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:8000/analyze-infrastructure-graph`
+      : "/api/analyze-infrastructure-graph";
+
     try {
-      const response = await fetch("/api/analyze-infrastructure-graph", {
+      // Set a 5-minute timeout for LLM processing
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000);
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Upload failed: ${response.statusText}`);
@@ -66,7 +78,15 @@ export default function Home() {
 
       setGraphData(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError("Analysis timeout (5 minutes). Document may be too large.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Upload failed");
+      }
       console.error("Upload error:", err);
     } finally {
       setLoading(false);

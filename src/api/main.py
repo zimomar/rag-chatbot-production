@@ -9,6 +9,7 @@ from datetime import UTC
 from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -28,6 +29,17 @@ app = FastAPI(
     title="RAG Local API",
     description="API pour un chatbot RAG 100% local",
     version="0.2.0",
+)
+
+# ---------------------------------------------------------------------------
+# CORS Middleware (pour permettre les appels depuis le frontend)
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En production, spécifier les domaines autorisés
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
