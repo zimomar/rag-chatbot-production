@@ -45,7 +45,7 @@ resource "hcloud_firewall" "rag_firewall" {
   #   source_ips = ["0.0.0.0/0", "::/0"]
   # }
 
-  # Ports Applicatifs (API + Streamlit)
+  # Ports Applicatifs (API + Streamlit + Frontend)
   rule {
     direction = "in"
     protocol  = "tcp"
@@ -57,6 +57,13 @@ resource "hcloud_firewall" "rag_firewall" {
     direction = "in"
     protocol  = "tcp"
     port      = "8501"
+    source_ips = ["0.0.0.0/0", "::/0"]
+  }
+
+  rule {
+    direction = "in"
+    protocol  = "tcp"
+    port      = "3000"
     source_ips = ["0.0.0.0/0", "::/0"]
   }
 
