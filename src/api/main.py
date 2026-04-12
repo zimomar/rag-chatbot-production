@@ -571,12 +571,23 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
         embedded_chunks = temp_embedder.embed_chunks(chunks)
         temp_store.add_documents(embedded_chunks)
 
+        # Build type-specific search terms
+        type_terms = {
+            "network": "firewall IDS IPS segmentation VLAN",
+            "firewall": "règles filtrage pare-feu zones",
+            "database": "backup sauvegarde chiffrement accès",
+            "api": "authentification TLS rate-limiting",
+            "storage": "chiffrement backup réplication",
+            "auth": "MFA SSO IAM authentification",
+        }
+        specific_terms = type_terms.get(node_type, "")
+
         # Search for node-specific security information
-        search_query = f"{node_name} {node_type} security controls encryption authentication monitoring backup access control"
+        search_query = f"{node_name} {node_type} {specific_terms} security controls encryption authentication monitoring backup access control"
         results = temp_store.search_by_text(
             query_text=search_query,
             embedder=temp_embedder,
-            top_k=3
+            top_k=5  # Increased from 3
         )
 
         # Extract controls from the chunks
@@ -591,7 +602,9 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             # Backup/DR
             "backup", "sauvegarde", "disaster_recovery", "DR", "continuity", "continuité", "failover",
             # Network security
-            "firewall", "pare-feu", "IDS", "IPS", "WAF",
+            "firewall", "pare-feu", "IDS", "IPS", "WAF", "VLAN", "segmentation",
+            "network segmentation", "segmentation réseau", "DMZ", "VPN", "NAC",
+            "network access control", "contrôle accès réseau",
             # Access control
             "MFA", "SSO", "IAM", "RBAC", "access_control", "contrôle accès", "authentification", "authentication",
             # RGPD
@@ -622,6 +635,8 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             "sauvegarde": "backup",
             "continuité": "continuity",
             "pare-feu": "firewall",
+            "segmentation réseau": "network segmentation",
+            "contrôle accès réseau": "network access control",
             "contrôle accès": "access_control",
             "authentification": "authentication",
             "pseudonymisation": "pseudonymization",
@@ -653,8 +668,12 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
                     canonical = keyword_mapping.get(keyword, keyword)
                     controls.add(canonical)
 
-        logger.info(f"RAG extracted {len(controls)} controls for node {node_name}: {controls}")
-        return controls
+        # Combine with LLM-extracted controls
+        llm_controls = set(node.get("controls", []))
+        combined = controls | llm_controls
+
+        logger.info(f"RAG extracted {len(controls)} controls for node {node_name}, LLM had {len(llm_controls)}, combined: {combined}")
+        return combined
 
     except Exception as e:
         logger.error(f"Error in RAG control extraction for node {node_name}: {e}")
@@ -739,7 +758,7 @@ def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:
         score += 1.0
 
     # Network security
-    if any(c in controls for c in ["firewall", "IDS", "IPS", "WAF"]):
+    if any(c in controls for c in ["firewall", "IDS", "IPS", "WAF", "network segmentation", "VLAN", "DMZ", "VPN", "NAC", "network access control"]):
         score += 1.0
 
     return (score / max_score) * 100
