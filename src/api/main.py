@@ -9,6 +9,7 @@ from datetime import UTC
 from typing import Any
 from uuid import uuid4
 
+import httpx
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -474,18 +475,19 @@ async def analyze_infrastructure_graph(
                 error=graph_result.get("error", "Échec de l'extraction du graphe"),
             )
 
-        # 3. Calculate compliance scores per node using RAG-based analysis
-        compliance_scores = {}
+        # 3. Extract controls for all nodes via single LLM call
+        all_controls = _extract_all_controls_via_llm(graph_result["nodes"], document_text)
 
+        # 4. Calculate compliance scores per node
+        compliance_scores = {}
         for node in graph_result["nodes"]:
             node_id = node["id"]
+            controls = all_controls.get(node_id, set())
 
-            # Use RAG to extract node-specific controls from the DAT and calculate scores
-            scores = _analyze_node_compliance(node, document_text)
-
+            scores = _analyze_node_compliance(node, controls)
             compliance_scores[node_id] = ComplianceScoreModel(**scores)
 
-        # 4. Format response
+        # 5. Format response
         nodes = [GraphNodeModel(**node) for node in graph_result["nodes"]]
         edges = [
             GraphEdgeModel(from_=edge["from"], to=edge["to"], protocol=edge.get("protocol", "unknown"))
@@ -540,6 +542,127 @@ def _filter_applicable_regulations(node: dict[str, Any]) -> dict[str, bool]:
         "AI_Act": is_ai_system,
         "CRA": True,
     }
+
+
+def _extract_all_controls_via_llm(nodes: list[dict[str, Any]], document_text: str) -> dict[str, set[str]]:
+    """
+    Extrait les contrôles pour TOUS les nœuds via 1 seul appel LLM.
+
+    Args:
+        nodes: Liste des nœuds du graphe
+        document_text: Contenu complet du DAT
+
+    Returns:
+        Dict {node_id: set(controls)}
+    """
+    if not nodes:
+        return {}
+
+    # Create temporary index once
+    temp_chunker = Chunker()
+    temp_embedder = Embedder()
+    temp_store = VectorStore(collection_name=f"temp_all_{uuid4().hex[:8]}")
+
+    try:
+        from src.ingestion.loader import Document
+        temp_doc = Document(content=document_text, source="dat_analysis")
+
+        chunks = temp_chunker.split(temp_doc)
+        embedded_chunks = temp_embedder.embed_chunks(chunks)
+        temp_store.add_documents(embedded_chunks)
+
+        # Get relevant chunks for each node
+        nodes_with_chunks = []
+        for node in nodes:
+            node_id = node["id"]
+            node_name = node.get("name", "")
+            node_type = node.get("type", "")
+
+            search_query = f"{node_name} {node_type} security controls sécurité"
+            results = temp_store.search_by_text(
+                query_text=search_query,
+                embedder=temp_embedder,
+                top_k=3
+            )
+
+            chunks_text = "\n".join([r.content[:300] for r in results])
+            nodes_with_chunks.append({
+                "id": node_id,
+                "name": node_name,
+                "type": node_type,
+                "chunks": chunks_text,
+            })
+
+        # Build prompt for LLM
+        nodes_desc = "\n\n".join([
+            f"- ID: {n['id']}\n  Nom: {n['name']}\n  Type: {n['type']}\n  Extraits:\n{n['chunks']}"
+            for n in nodes_with_chunks
+        ])
+
+        system_prompt = (
+            "Tu es un expert en sécurité. Analyse les extraits de documentation pour chaque composant "
+            "et identifie TOUS les contrôles de sécurité mentionnés (TLS, mTLS, encryption, backup, MFA, "
+            "firewall, monitoring, SIEM, etc.). Retourne UNIQUEMENT un JSON valide."
+        )
+
+        user_prompt = (
+            f"Pour chaque composant ci-dessous, liste les contrôles de sécurité trouvés dans les extraits.\n\n"
+            f"Composants:\n{nodes_desc}\n\n"
+            f"Retourne UNIQUEMENT ce JSON (sans texte avant/après):\n"
+            f'{{"node_id_1": ["control1", "control2"], "node_id_2": [...], ...}}'
+        )
+
+        # Call LLM
+        response = httpx.post(
+            f"{settings.ollama_host}/api/chat",
+            json={
+                "model": settings.ollama_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "stream": False,
+                "options": {"temperature": 0.0, "num_predict": 2000},
+            },
+            timeout=60.0,
+        )
+
+        if response.status_code != 200:
+            logger.error(f"LLM error: {response.status_code}")
+            return {n["id"]: set(n.get("controls", [])) for n in nodes}
+
+        result = response.json()
+        answer = result.get("message", {}).get("content", "")
+
+        # Parse JSON
+        import json as json_lib
+        json_str = answer.strip()
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
+
+        controls_dict = json_lib.loads(json_str)
+
+        # Convert to sets and merge with LLM-extracted controls
+        result_dict = {}
+        for node in nodes:
+            node_id = node["id"]
+            llm_controls = set(controls_dict.get(node_id, []))
+            graph_controls = set(node.get("controls", []))
+            result_dict[node_id] = llm_controls | graph_controls
+
+        logger.info(f"Extracted controls for {len(result_dict)} nodes via LLM")
+        return result_dict
+
+    except Exception as e:
+        logger.error(f"Error in LLM control extraction: {e}")
+        return {n["id"]: set(n.get("controls", [])) for n in nodes}
+    finally:
+        try:
+            temp_store.client.delete_collection(temp_store.collection_name)
+        except Exception:
+            pass
 
 
 def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[str]:
@@ -693,19 +816,17 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             pass
 
 
-def _analyze_node_compliance(node: dict[str, Any], document_text: str) -> dict[str, float]:
+def _analyze_node_compliance(node: dict[str, Any], controls: set[str]) -> dict[str, float]:
     """
-    Analyse la conformité d'un nœud via RAG sur le DAT document.
+    Analyse la conformité d'un nœud avec ses contrôles détectés.
 
     Args:
         node: Nœud du graphe
-        document_text: Contenu complet du DAT
+        controls: Ensemble des contrôles de sécurité détectés
 
     Returns:
         Dictionnaire des scores par réglementation
     """
-    # Extract controls specific to this node using RAG
-    controls = _extract_controls_from_rag(node, document_text)
 
     # Determine applicable regulations
     applicable_regs = _filter_applicable_regulations(node)
