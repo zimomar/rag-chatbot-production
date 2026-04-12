@@ -579,6 +579,7 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             "api": "authentification TLS rate-limiting",
             "storage": "chiffrement backup réplication",
             "auth": "MFA SSO IAM authentification",
+            "load_balancer": "répartition charge haute disponibilité failover health check",
         }
         specific_terms = type_terms.get(node_type, "")
 
@@ -601,6 +602,8 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             "incident_response", "gestion incidents", "24h_notification",
             # Backup/DR
             "backup", "sauvegarde", "disaster_recovery", "DR", "continuity", "continuité", "failover",
+            "high availability", "haute disponibilité", "HA", "load balancing", "répartition charge",
+            "health check", "redondance", "redundancy",
             # Network security
             "firewall", "pare-feu", "IDS", "IPS", "WAF", "VLAN", "segmentation",
             "network segmentation", "segmentation réseau", "DMZ", "VPN", "NAC",
@@ -634,6 +637,9 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
             "gestion incidents": "incident_response",
             "sauvegarde": "backup",
             "continuité": "continuity",
+            "haute disponibilité": "high availability",
+            "répartition charge": "load balancing",
+            "redondance": "redundancy",
             "pare-feu": "firewall",
             "segmentation réseau": "network segmentation",
             "contrôle accès réseau": "network access control",
@@ -754,7 +760,7 @@ def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:
         score += 1.0
 
     # Backup/disaster recovery
-    if any(c in controls for c in ["backup", "disaster_recovery", "DR"]):
+    if any(c in controls for c in ["backup", "disaster_recovery", "DR", "failover", "high availability", "redundancy"]):
         score += 1.0
 
     # Network security
@@ -778,7 +784,7 @@ def _calculate_dora_score(node: dict[str, Any], controls: set[str]) -> float:
         score += 1.0
 
     # Continuity/backup
-    if any(c in controls for c in ["backup", "continuity", "failover"]):
+    if any(c in controls for c in ["backup", "continuity", "failover", "high availability", "redundancy"]):
         score += 1.0
 
     # Incident management
