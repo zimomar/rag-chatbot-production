@@ -427,7 +427,7 @@ class ComplianceScoreModel(BaseModel):
     DORA: float
     RGPD: float
     AI_Act: float
-    CRA: float
+    # CRA: float  # Removed temporarily (detection issues)
 
 
 class GraphAnalysisResponse(BaseModel):
@@ -859,10 +859,11 @@ def _analyze_node_compliance(node: dict[str, Any], controls: set[str]) -> dict[s
     else:
         scores["AI_Act"] = 100.0
 
-    if applicable_regs["CRA"]:
-        scores["CRA"] = _calculate_cra_score(node, controls)
-    else:
-        scores["CRA"] = 100.0
+    # CRA removed from scoring (TODO: fix detection issues)
+    # if applicable_regs["CRA"]:
+    #     scores["CRA"] = _calculate_cra_score(node, controls)
+    # else:
+    #     scores["CRA"] = 100.0
 
     logger.info(f"Node {node.get('name')} compliance scores: {scores}")
     return scores

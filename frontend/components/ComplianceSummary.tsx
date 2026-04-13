@@ -12,7 +12,7 @@ const regulations: { name: Regulation; label: string; color: string }[] = [
   { name: "DORA", label: "DORA", color: "bg-purple-500" },
   { name: "RGPD", label: "RGPD", color: "bg-green-500" },
   { name: "AI_Act", label: "AI Act", color: "bg-orange-500" },
-  { name: "CRA", label: "CRA", color: "bg-pink-500" },
+  // { name: "CRA", label: "CRA", color: "bg-pink-500" },  // Removed temporarily
 ];
 
 export function ComplianceSummary({ graphData }: ComplianceSummaryProps) {

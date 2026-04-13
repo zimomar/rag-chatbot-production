@@ -23,7 +23,7 @@ const regulationDetails: Record<
   DORA: { label: "DORA", color: "text-purple-400" },
   RGPD: { label: "RGPD", color: "text-green-400" },
   AI_Act: { label: "AI Act", color: "text-orange-400" },
-  CRA: { label: "CRA", color: "text-pink-400" },
+  // CRA: { label: "CRA", color: "text-pink-400" },  // Removed temporarily
 };
 
 const getGapsByRegulation = (
@@ -67,14 +67,16 @@ const getGapsByRegulation = (
     if (!controls.some((c) => c.includes("bias") || c.includes("fairness"))) {
       gaps.push("No bias monitoring or fairness testing");
     }
-  } else if (regulation === "CRA") {
-    if (!controls.some((c) => c.includes("vulnerability") || c.includes("patch"))) {
-      gaps.push("No vulnerability management process");
-    }
-    if (!controls.some((c) => c.includes("SBOM") || c.includes("supply_chain"))) {
-      gaps.push("Missing SBOM or supply chain security");
-    }
   }
+  // CRA removed temporarily
+  // else if (regulation === "CRA") {
+  //   if (!controls.some((c) => c.includes("vulnerability") || c.includes("patch"))) {
+  //     gaps.push("No vulnerability management process");
+  //   }
+  //   if (!controls.some((c) => c.includes("SBOM") || c.includes("supply_chain"))) {
+  //     gaps.push("Missing SBOM or supply chain security");
+  //   }
+  // }
 
   return gaps;
 };

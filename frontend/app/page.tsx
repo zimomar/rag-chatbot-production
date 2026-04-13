@@ -24,7 +24,7 @@ export interface ComplianceScore {
   DORA: number;
   RGPD: number;
   AI_Act: number;
-  CRA: number;
+  // CRA: number;  // Removed temporarily
 }
 
 export interface GraphData {
@@ -33,7 +33,7 @@ export interface GraphData {
   compliance_scores_by_node: Record<string, ComplianceScore>;
 }
 
-export type Regulation = "NIS2" | "DORA" | "RGPD" | "AI_Act" | "CRA";
+export type Regulation = "NIS2" | "DORA" | "RGPD" | "AI_Act"; // | "CRA" removed temporarily
 
 export default function Home() {
   const [graphData, setGraphData] = useState<GraphData | null>(null);

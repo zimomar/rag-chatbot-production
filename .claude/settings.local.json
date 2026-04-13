@@ -29,7 +29,20 @@
       "Bash(start https://www.youtube.com/watch?v=rP7bpYsfa6Q)",
       "Bash(start https://paulgraham.com/genius.html)",
       "Bash(npx create-next-app@latest:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git reset:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(terraform apply:*)",
+      "Bash(docker logs:*)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"cd /root/rag-chatbot-production && git pull && docker compose up -d --build frontend\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"find /home -name ''rag-chatbot-production'' -type d 2>/dev/null\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"ls -la ~ && pwd\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"docker ps -a | grep rag-frontend\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"docker inspect rag-frontend | grep -A 5 ''com.docker.compose.project.working_dir''\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@178.104.106.94 \"cd /app/repo && git pull && docker compose up -d --build frontend\")",
+      "Bash(.venvScriptspython.exe -m py_compile srcapimain.py)",
+      "Skill(commit-commands:commit)",
+      "Bash(ssh:*)"
     ]
   }
 }
