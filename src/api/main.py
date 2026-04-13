@@ -644,12 +644,16 @@ def _extract_all_controls_via_llm(nodes: list[dict[str, Any]], document_text: st
 
         controls_dict = json_lib.loads(json_str)
 
-        # Convert to sets and merge with LLM-extracted controls
+        # Normalize and convert to sets
+        def normalize_control(ctrl: str) -> str:
+            """Normalize control name: lowercase, replace spaces with underscores."""
+            return ctrl.lower().strip().replace(" ", "_").replace("-", "_")
+
         result_dict = {}
         for node in nodes:
             node_id = node["id"]
-            llm_controls = set(controls_dict.get(node_id, []))
-            graph_controls = set(node.get("controls", []))
+            llm_controls = {normalize_control(c) for c in controls_dict.get(node_id, [])}
+            graph_controls = {normalize_control(c) for c in node.get("controls", [])}
             result_dict[node_id] = llm_controls | graph_controls
 
         logger.info(f"Extracted controls for {len(result_dict)} nodes via LLM")
@@ -868,24 +872,27 @@ def _calculate_nis2_score(node: dict[str, Any], controls: set[str]) -> float:
     score = 0.0
     max_score = 5.0
 
+    # Normalize controls for comparison
+    controls_lower = {c.lower() for c in controls}
+
     # Encryption/TLS
-    if any(c in controls for c in ["TLS", "mTLS", "encryption", "TLS 1.3", "AES-256", "SSL"]):
+    if any(c in controls_lower for c in ["tls", "mtls", "encryption", "tls_1.3", "aes_256", "ssl"]):
         score += 1.0
 
     # Monitoring/logging
-    if any(c in controls for c in ["logging", "monitoring", "SIEM"]):
+    if any(c in controls_lower for c in ["logging", "monitoring", "siem"]):
         score += 1.0
 
     # Incident response
-    if any(c in controls for c in ["incident_response", "24h_notification"]):
+    if any(c in controls_lower for c in ["incident_response", "24h_notification"]):
         score += 1.0
 
     # Backup/disaster recovery
-    if any(c in controls for c in ["backup", "disaster_recovery", "DR", "failover", "high availability", "redundancy"]):
+    if any(c in controls_lower for c in ["backup", "disaster_recovery", "dr", "failover", "high_availability", "redundancy"]):
         score += 1.0
 
     # Network security
-    if any(c in controls for c in ["firewall", "IDS", "IPS", "WAF", "network segmentation", "VLAN", "DMZ", "VPN", "NAC", "network access control"]):
+    if any(c in controls_lower for c in ["firewall", "ids", "ips", "idps", "waf", "network_segmentation", "vlan", "dmz", "vpn", "nac", "network_access_control"]):
         score += 1.0
 
     return (score / max_score) * 100
@@ -896,20 +903,22 @@ def _calculate_dora_score(node: dict[str, Any], controls: set[str]) -> float:
     score = 0.0
     max_score = 4.0
 
+    controls_lower = {c.lower() for c in controls}
+
     # ICT resilience testing
-    if any(c in controls for c in ["resilience_testing", "chaos_testing"]):
+    if any(c in controls_lower for c in ["resilience_testing", "chaos_testing"]):
         score += 1.0
 
     # Third-party risk management
-    if any(c in controls for c in ["vendor_management", "third_party_audit"]):
+    if any(c in controls_lower for c in ["vendor_management", "third_party_audit"]):
         score += 1.0
 
     # Continuity/backup
-    if any(c in controls for c in ["backup", "continuity", "failover", "high availability", "redundancy"]):
+    if any(c in controls_lower for c in ["backup", "continuity", "failover", "high_availability", "redundancy"]):
         score += 1.0
 
     # Incident management
-    if any(c in controls for c in ["incident_management", "incident_response"]):
+    if any(c in controls_lower for c in ["incident_management", "incident_response"]):
         score += 1.0
 
     return (score / max_score) * 100
@@ -920,24 +929,26 @@ def _calculate_rgpd_score(node: dict[str, Any], controls: set[str]) -> float:
     score = 0.0
     max_score = 5.0
 
+    controls_lower = {c.lower() for c in controls}
+
     # Encryption
-    if any(c in controls for c in ["encryption", "TLS", "mTLS", "AES-256", "SSL"]):
+    if any(c in controls_lower for c in ["encryption", "tls", "mtls", "aes_256", "ssl"]):
         score += 1.0
 
     # Access control/IAM
-    if any(c in controls for c in ["IAM", "MFA", "SSO", "access_control", "RBAC", "authentication"]):
+    if any(c in controls_lower for c in ["iam", "mfa", "sso", "access_control", "rbac", "authentication"]):
         score += 1.0
 
     # Data minimization/pseudonymization
-    if any(c in controls for c in ["pseudonymization", "anonymization", "data_minimization"]):
+    if any(c in controls_lower for c in ["pseudonymization", "anonymization", "data_minimization"]):
         score += 1.0
 
     # DPO/privacy by design
-    if any(c in controls for c in ["DPO", "privacy_by_design", "DPIA"]):
+    if any(c in controls_lower for c in ["dpo", "privacy_by_design", "dpia"]):
         score += 1.0
 
     # Audit logs
-    if any(c in controls for c in ["audit_logs", "logging"]):
+    if any(c in controls_lower for c in ["audit_logs", "logging"]):
         score += 1.0
 
     return (score / max_score) * 100
@@ -948,20 +959,22 @@ def _calculate_ai_act_score(node: dict[str, Any], controls: set[str]) -> float:
     score = 0.0
     max_score = 4.0
 
+    controls_lower = {c.lower() for c in controls}
+
     # Documentation/transparency
-    if any(c in controls for c in ["documentation", "model_card", "transparency"]):
+    if any(c in controls_lower for c in ["documentation", "model_card", "transparency"]):
         score += 1.0
 
     # Bias monitoring
-    if any(c in controls for c in ["bias_monitoring", "fairness_testing", "SHAP"]):
+    if any(c in controls_lower for c in ["bias_monitoring", "fairness_testing", "shap"]):
         score += 1.0
 
     # Human oversight
-    if any(c in controls for c in ["human_oversight", "human_in_loop"]):
+    if any(c in controls_lower for c in ["human_oversight", "human_in_loop"]):
         score += 1.0
 
     # Data governance
-    if any(c in controls for c in ["data_governance", "data_quality", "lineage"]):
+    if any(c in controls_lower for c in ["data_governance", "data_quality", "lineage"]):
         score += 1.0
 
     return (score / max_score) * 100
@@ -969,21 +982,21 @@ def _calculate_ai_act_score(node: dict[str, Any], controls: set[str]) -> float:
 
 def _calculate_cra_score(node: dict[str, Any], controls: set[str]) -> float:
     """Calcule le score CRA basé sur la sécurité des produits numériques."""
-    # CRA applies to products put on the market, not internal infrastructure
-    # For simplicity, we'll check for security controls
     score = 0.0
     max_score = 3.0
 
+    controls_lower = {c.lower() for c in controls}
+
     # Vulnerability management
-    if any(c in controls for c in ["vulnerability_scanning", "patch_management", "CVE_monitoring"]):
+    if any(c in controls_lower for c in ["vulnerability_scanning", "patch_management", "cve_monitoring", "vulnerability", "vuln"]):
         score += 1.0
 
     # Secure development
-    if any(c in controls for c in ["SAST", "DAST", "secure_SDLC"]):
+    if any(c in controls_lower for c in ["sast", "dast", "secure_sdlc", "sdlc"]):
         score += 1.0
 
     # SBOM/supply chain
-    if any(c in controls for c in ["SBOM", "supply_chain_security", "dependency_scanning"]):
+    if any(c in controls_lower for c in ["sbom", "supply_chain_security", "dependency_scanning"]):
         score += 1.0
 
     return (score / max_score) * 100
