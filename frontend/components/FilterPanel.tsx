@@ -13,7 +13,7 @@ const regulations: { name: Regulation; label: string; color: string }[] = [
   { name: "DORA", label: "DORA", color: "text-purple-400" },
   { name: "RGPD", label: "RGPD", color: "text-green-400" },
   { name: "AI_Act", label: "AI Act", color: "text-orange-400" },
-  { name: "CRA", label: "CRA", color: "text-pink-400" },
+  // { name: "CRA", label: "CRA", color: "text-pink-400" },  // Removed temporarily
 ];
 
 export function FilterPanel({
