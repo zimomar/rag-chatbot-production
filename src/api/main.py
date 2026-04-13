@@ -534,13 +534,14 @@ def _filter_applicable_regulations(node: dict[str, Any]) -> dict[str, bool]:
     rgpd_keywords = ["user", "customer", "personal", "auth", "identity", "profile", "account", "payment", "transaction", "banking"]
     handles_personal_data = any(kw in node_type for kw in rgpd_keywords) or any(kw in node_name for kw in rgpd_keywords)
 
-    # NIS2 and CRA: apply to all
+    # NIS2: apply to all
+    # CRA: DISABLED temporarily (scoring issues) - set to False to reactivate
     return {
         "NIS2": True,
         "DORA": is_dora_applicable,
         "RGPD": handles_personal_data,
         "AI_Act": is_ai_system,
-        "CRA": True,
+        "CRA": False,  # TODO: Fix control detection, then set to True
     }
 
 
