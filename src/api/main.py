@@ -565,7 +565,7 @@ def _extract_all_controls_via_llm(nodes: list[dict[str, Any]], document_text: st
 
     try:
         from src.ingestion.loader import Document
-        temp_doc = Document(content=document_text, source="dat_analysis")
+        temp_doc = Document(content=document_text, metadata={"source": "dat_analysis"})
 
         chunks = temp_chunker.split(temp_doc)
         embedded_chunks = temp_embedder.embed_chunks(chunks)
@@ -691,7 +691,7 @@ def _extract_controls_from_rag(node: dict[str, Any], document_text: str) -> set[
     try:
         # Create a temporary document
         from src.ingestion.loader import Document
-        temp_doc = Document(content=document_text, source=f"dat_{node_name}")
+        temp_doc = Document(content=document_text, metadata={"source": f"dat_{node_name}"})
 
         # Chunk and embed
         chunks = temp_chunker.split(temp_doc)
